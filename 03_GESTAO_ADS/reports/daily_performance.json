@@ -1,0 +1,156 @@
+{
+  "_meta": {
+    "report_date": "2026-04-27",
+    "currency": "BRL",
+    "platform": "Meta Ads",
+    "generated_by": "ads-manager-agent",
+    "cpa_limits_by_niche": {
+      "imobiliaria": 80.00,
+      "suplementos": 60.00,
+      "educacao": 120.00
+    },
+    "scale_roas_threshold": 3.0,
+    "ctr_min_video": 0.01
+  },
+  "ads": [
+    {
+      "ad_id": "IMOBI_JARDINS_FEED_001",
+      "campaign_name": "Jardins — Alto Padrão SP | Feed",
+      "niche": "imobiliaria",
+      "ad_format": "image_feed",
+      "creative_hook": "Você não compra um apartamento. Você compra um estilo de vida.",
+      "daily_budget_brl": 350.00,
+      "metrics": {
+        "spend_brl": 322.40,
+        "impressions": 18540,
+        "clicks": 483,
+        "ctr_pct": 2.61,
+        "conversions": 9,
+        "cpa_brl": 35.82,
+        "revenue_attributed_brl": 1620.00,
+        "roas": 5.02
+      },
+      "cpa_limit_brl": 80.00,
+      "agent_decision": {
+        "action": "SCALE",
+        "reason": "CPA R$35.82 abaixo do limite R$80.00 e ROAS 5.02 acima de 3.0. Aumentar orçamento em 20%.",
+        "budget_change": 0.20,
+        "alert_creative_team": false
+      }
+    },
+    {
+      "ad_id": "IMOBI_JARDINS_REELS_002",
+      "campaign_name": "Jardins — Alto Padrão SP | Reels",
+      "niche": "imobiliaria",
+      "ad_format": "video_reels",
+      "creative_hook": "Quantas horas você perde por dia por morar no lugar errado?",
+      "daily_budget_brl": 300.00,
+      "metrics": {
+        "spend_brl": 278.90,
+        "impressions": 22100,
+        "clicks": 354,
+        "ctr_pct": 1.60,
+        "conversions": 5,
+        "cpa_brl": 55.78,
+        "revenue_attributed_brl": 700.00,
+        "roas": 2.51
+      },
+      "cpa_limit_brl": 80.00,
+      "agent_decision": {
+        "action": "MAINTAIN",
+        "reason": "CPA R$55.78 dentro do limite. ROAS 2.51 abaixo de 3.0 — não qualifica para escala. Manter orçamento e aguardar mais dados.",
+        "budget_change": 0.00,
+        "alert_creative_team": false
+      }
+    },
+    {
+      "ad_id": "SUPL_APPETIX_GRELINA_003",
+      "campaign_name": "Appetix — Controle de Grelina | Carrossel",
+      "niche": "suplementos",
+      "ad_format": "carousel_feed",
+      "creative_hook": "Você não tem fome. Você está sendo controlado.",
+      "daily_budget_brl": 200.00,
+      "metrics": {
+        "spend_brl": 185.50,
+        "impressions": 12380,
+        "clicks": 433,
+        "ctr_pct": 3.50,
+        "conversions": 7,
+        "cpa_brl": 26.50,
+        "revenue_attributed_brl": 1049.00,
+        "roas": 5.66
+      },
+      "cpa_limit_brl": 60.00,
+      "agent_decision": {
+        "action": "SCALE",
+        "reason": "CPA R$26.50 bem abaixo do limite R$60.00 e ROAS 5.66 acima de 3.0. Melhor anúncio do dia — aumentar orçamento em 20%.",
+        "budget_change": 0.20,
+        "alert_creative_team": false
+      }
+    },
+    {
+      "ad_id": "SUPL_APPETIX_ANTESDEPOIS_004",
+      "campaign_name": "Appetix — Antes e Depois 30 dias | Feed",
+      "niche": "suplementos",
+      "ad_format": "image_feed",
+      "creative_hook": "30 dias. Mesma pessoa. Resultado diferente.",
+      "daily_budget_brl": 200.00,
+      "metrics": {
+        "spend_brl": 210.00,
+        "impressions": 15220,
+        "clicks": 198,
+        "ctr_pct": 1.30,
+        "conversions": 1,
+        "cpa_brl": 210.00,
+        "revenue_attributed_brl": 149.90,
+        "roas": 0.71
+      },
+      "cpa_limit_brl": 60.00,
+      "agent_decision": {
+        "action": "PAUSE",
+        "reason": "⚠️ CPA R$210.00 — 3.5x acima do limite R$60.00. ROAS 0.71 (operando no prejuízo). Pausar imediatamente para estancar o sangramento de verba.",
+        "budget_change": 0.00,
+        "alert_creative_team": false
+      }
+    },
+    {
+      "ad_id": "EDU_SDR_DIGITAL_HOOK_005",
+      "campaign_name": "Curso SDR Digital — Vídeo Hook | Reels",
+      "niche": "educacao",
+      "ad_format": "video_reels",
+      "creative_hook": "Aprenda a fechar clientes pelo WhatsApp em 30 dias.",
+      "daily_budget_brl": 180.00,
+      "metrics": {
+        "spend_brl": 152.30,
+        "impressions": 24810,
+        "clicks": 174,
+        "ctr_pct": 0.70,
+        "conversions": 2,
+        "cpa_brl": 76.15,
+        "revenue_attributed_brl": 298.00,
+        "roas": 1.96
+      },
+      "cpa_limit_brl": 120.00,
+      "agent_decision": {
+        "action": "RECREATE",
+        "reason": "CTR 0.70% abaixo do mínimo de 1.0% para vídeo — o hook falhou. CPA dentro do limite mas volume de conversão inviável com esse CTR. Notificar copywriter-agent para novo criativo.",
+        "budget_change": 0.00,
+        "alert_creative_team": true
+      }
+    }
+  ],
+  "daily_summary": {
+    "total_spend_brl": 1149.10,
+    "total_clicks": 1642,
+    "total_conversions": 24,
+    "blended_cpa_brl": 47.88,
+    "blended_roas": 3.23,
+    "actions_required": {
+      "SCALE": ["IMOBI_JARDINS_FEED_001", "SUPL_APPETIX_GRELINA_003"],
+      "MAINTAIN": ["IMOBI_JARDINS_REELS_002"],
+      "PAUSE": ["SUPL_APPETIX_ANTESDEPOIS_004"],
+      "RECREATE": ["EDU_SDR_DIGITAL_HOOK_005"]
+    },
+    "creative_team_alerts": ["EDU_SDR_DIGITAL_HOOK_005"]
+  }
+}

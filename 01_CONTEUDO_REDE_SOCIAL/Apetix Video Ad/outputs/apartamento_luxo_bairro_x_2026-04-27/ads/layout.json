@@ -1,0 +1,88 @@
+{
+  "_agent": "Ad Creative Designer",
+  "_task": "apartamento_luxo_bairro_x",
+  "_date": "2026-04-27",
+  "campaign_angle": "Você não compra um apartamento. Você compra um estilo de vida.",
+  "template": "lifestyle",
+  "format": "instagram_square",
+  "width": 1080,
+  "height": 1080,
+  "background": "#0B0B0B",
+  "color_palette": {
+    "primary": "#0B0B0B",
+    "accent_gold": "#C9A84C",
+    "text_white": "#F5F0E8",
+    "text_muted": "#888888",
+    "overlay": "rgba(11,11,11,0.72)"
+  },
+  "typography": {
+    "headline_font": "Didot, Georgia, serif",
+    "body_font": "Helvetica Neue, Arial, sans-serif",
+    "weight_bold": 700,
+    "weight_light": 300
+  },
+  "elements": [
+    {
+      "type": "background_image",
+      "src": "/assets/apt_luxo_hero.jpg",
+      "objectFit": "cover",
+      "objectPosition": "center 40%",
+      "overlay_opacity": 0.55
+    },
+    {
+      "type": "gradient_overlay",
+      "gradient": "linear-gradient(to bottom, rgba(11,11,11,0.15) 0%, rgba(11,11,11,0.85) 100%)"
+    },
+    {
+      "type": "eyebrow",
+      "text": "BAIRRO X · LANÇAMENTO EXCLUSIVO",
+      "x": 80,
+      "y": 760,
+      "fontSize": 22,
+      "color": "#C9A84C",
+      "letterSpacing": 4,
+      "fontWeight": 400
+    },
+    {
+      "type": "divider",
+      "x": 80,
+      "y": 794,
+      "width": 60,
+      "height": 1.5,
+      "color": "#C9A84C"
+    },
+    {
+      "type": "headline",
+      "text": "Você não compra\num apartamento.",
+      "x": 80,
+      "y": 812,
+      "fontSize": 72,
+      "color": "#F5F0E8",
+      "fontWeight": 700,
+      "lineHeight": 1.05,
+      "fontFamily": "Didot, Georgia, serif"
+    },
+    {
+      "type": "subheadline",
+      "text": "Você compra um estilo de vida.",
+      "x": 80,
+      "y": 956,
+      "fontSize": 40,
+      "color": "#C9A84C",
+      "fontWeight": 300,
+      "letterSpacing": 1
+    },
+    {
+      "type": "cta",
+      "text": "Descubra o Bairro X →",
+      "x": 80,
+      "y": 1010,
+      "fontSize": 24,
+      "color": "#888888",
+      "fontWeight": 400,
+      "letterSpacing": 2,
+      "textTransform": "uppercase"
+    }
+  ],
+  "notes": "Estética Quiet Luxury: fundo escuro, tipografia serifada elegante, dourado como único acento de cor. Sem ruído visual — hierarquia limpa."
+}

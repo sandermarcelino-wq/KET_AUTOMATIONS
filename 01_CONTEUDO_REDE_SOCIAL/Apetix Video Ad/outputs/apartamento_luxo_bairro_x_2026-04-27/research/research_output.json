@@ -1,0 +1,74 @@
+{
+  "_agent": "Marketing Research Agent",
+  "_task": "apartamento_luxo_bairro_x",
+  "_date": "2026-04-27",
+
+  "niche": "imóveis de luxo",
+  "product": "Apartamento de Luxo no Bairro X",
+  "audience": "compradores de alto poder aquisitivo, investidores imobiliários, famílias em busca de upgrade de vida",
+
+  "market_context": {
+    "trend": "Mercado imobiliário de luxo em crescimento consistente no Brasil em 2026 (São Paulo, Brasília, Rio, Florianópolis)",
+    "buyer_profile": "Mais jovem, conectado, exigente. Não compra um imóvel — compra um estilo de vida, status e comunidade. Baixa sensibilidade a juros.",
+    "key_concept": "Quiet Luxury — sofisticação discreta que dispensa ostentação. Projetos autorais, personalizáveis, com forte potencial de valorização.",
+    "macro_drivers": ["automação residencial inteligente", "sustentabilidade como pilar", "personalização total", "condomínio-clube sofisticado", "localização que otimiza tempo"]
+  },
+
+  "content_topics": [
+    "Por que o endereço define quem você se torna",
+    "Quiet Luxury: o imóvel que não precisa gritar para impressionar",
+    "Como o Bairro X se tornou o novo epicentro do alto padrão",
+    "Tour virtual: cada detalhe pensado para o seu estilo de vida",
+    "Valorização no mercado de luxo: por que este ciclo é diferente"
+  ],
+
+  "content_angles": [
+    "Você não compra um apartamento. Você compra um estilo de vida.",
+    "No Bairro X, o seu tempo é o único recurso escasso.",
+    "O endereço que abre portas.",
+    "Sofisticação que não precisa gritar."
+  ],
+
+  "keywords": [
+    "apartamento de luxo",
+    "imóvel alto padrão",
+    "quiet luxury",
+    "Bairro X",
+    "lançamento imobiliário luxo",
+    "estilo de vida alto padrão",
+    "investimento imobiliário luxo",
+    "condomínio clube luxo Brasil",
+    "apartamento personalizado",
+    "endereço exclusivo"
+  ],
+
+  "ad_hooks": [
+    "Você não compra um apartamento. Você compra um estilo de vida.",
+    "O Bairro X não é só localização — é quem você decide ser.",
+    "Quantas horas você perde por dia por morar no lugar errado?",
+    "Um endereço que fala por você antes de você abrir a boca.",
+    "Aqui, a sofisticação é silenciosa. E o valor é óbvio."
+  ],
+
+  "competitor_insights": [
+    {
+      "brand": "CAPRI Lifestyle by Dolce & Gabbana Casa",
+      "angle": "Primeira experiência residencial D&G na América Latina — posicionamento de marca aspiracional máxima"
+    },
+    {
+      "brand": "Jardim da Hípica LAVVI",
+      "angle": "Maior lançamento residencial de São Paulo — posicionamento de escala + sofisticação"
+    },
+    {
+      "brand": "Tendência geral 2026",
+      "angle": "Tours virtuais de alta definição são requisito básico; microinfluenciadores de nicho geolocalizado performam melhor que celebridades"
+    }
+  ],
+
+  "video_concepts": [
+    "Tour em primeira pessoa: 'Um dia morando no Bairro X' (POV lifestyle)",
+    "Antes vs depois: o que muda no seu tempo quando você mora no endereço certo",
+    "Quiet Luxury showcase: detalhes exclusivos do apartamento — materiais, acabamentos, vistas",
+    "Depoimento de morador: 'O que ninguém te conta sobre viver no alto padrão'"
+  ]
+}

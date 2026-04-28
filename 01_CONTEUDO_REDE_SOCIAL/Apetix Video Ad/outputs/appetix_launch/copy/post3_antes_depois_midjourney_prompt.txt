@@ -1,0 +1,15 @@
+MIDJOURNEY PROMPT — Post 3 "Antes e Depois" (1080x1080)
+=======================================================
+
+Prompt:
+"Split image before and after, Brazilian woman 34 years old, left side: tired, bloated, frustrated expression, dim lighting, casual clothes, slight weight gain visible, muted desaturated colors, documentary style --no text --no labels; right side: same woman confident, lighter, energetic smile, warm natural lighting, fitted casual wear, healthy glowing skin, vibrant warm tones. Ultra-realistic photography, Canon EOS R5, 85mm f/1.4, shallow depth of field, professional portrait. Vertical divider line down the center. --ar 1:1 --style raw --v 6.1"
+
+Alternativa DALL-E 3:
+"A realistic before-and-after split photo of the same Brazilian woman in her mid-30s. Left half: she looks tired and bloated with a frustrated expression, desaturated cool lighting, casual oversized clothes. Right half: same woman appears lighter, more confident, with a genuine smile, warm golden lighting, fitted clothes. The two halves are divided by a thin vertical line. Photo-realistic, not illustrated, shot with natural light. 1:1 square format."
+
+Instruções de uso:
+- Gerar no Midjourney (preferido) ou DALL-E 3
+- Dimensões finais: 1080x1080px
+- Salvar como: outputs/appetix_launch/images/12_post3_antes_depois_sabado_12h.png
+  (substituindo o placeholder atual)
+- Adicionar logo Appetix no canto inferior direito em pós-produção se necessário

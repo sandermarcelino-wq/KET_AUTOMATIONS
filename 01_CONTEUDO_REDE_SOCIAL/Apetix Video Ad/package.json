@@ -1,0 +1,29 @@
+{
+  "name": "appetix-video-ad",
+  "version": "1.0.0",
+  "description": "Appetix — Video Ad em Remotion (9:16, 15s, problem_solution)",
+  "scripts": {
+    "start": "remotion studio",
+    "render": "remotion render AdVideo out/appetix-ad.mp4",
+    "render:gif": "remotion render AdVideo out/appetix-ad.gif --codec gif",
+    "upgrade": "remotion upgrade",
+    "research": "npx ts-node agents/research.ts",
+    "screenshot": "node agents/screenshot.js"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@tavily/core": "^0.7.2",
+    "dotenv": "^17.4.2",
+    "playwright": "^1.59.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  }
+}

@@ -1,0 +1,143 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.ad-container {
+  width: 1080px;
+  height: 1080px;
+  background: linear-gradient(180deg, #0e0005 0%, #000000 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Vignette overlay */
+.ad-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+  pointer-events: none;
+}
+
+.test-badge {
+  position: absolute;
+  top: 32px;
+  right: 40px;
+  background: rgba(255, 59, 48, 0.15);
+  border: 1px solid #FF3B30;
+  color: #FF3B30;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 6px;
+  letter-spacing: 1px;
+  z-index: 10;
+}
+
+.eyebrow {
+  font-size: 26px;
+  font-weight: 600;
+  color: #C9A84C;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.headline {
+  font-size: 96px;
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1.0;
+  letter-spacing: -2px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.headline-accent {
+  font-size: 60px;
+  font-weight: 900;
+  color: #FF3B30;
+  line-height: 1.05;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.divider {
+  width: 280px;
+  height: 3px;
+  background: #C9A84C;
+  margin-bottom: 36px;
+}
+
+.benefit-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.benefit-list li {
+  font-size: 52px;
+  font-weight: 700;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.check {
+  color: #4CAF50;
+  font-size: 52px;
+  line-height: 1;
+}
+
+.subtext {
+  font-size: 32px;
+  font-weight: 500;
+  color: #AAAAAA;
+  line-height: 1.55;
+  margin-bottom: 52px;
+}
+
+.cta-button {
+  width: 100%;
+  height: 90px;
+  background: #FF3B30;
+  border: none;
+  border-radius: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 42px;
+  font-weight: 900;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  cursor: pointer;
+  margin-bottom: 28px;
+}
+
+.brand-watermark {
+  font-size: 22px;
+  font-weight: 600;
+  color: #C9A84C;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}

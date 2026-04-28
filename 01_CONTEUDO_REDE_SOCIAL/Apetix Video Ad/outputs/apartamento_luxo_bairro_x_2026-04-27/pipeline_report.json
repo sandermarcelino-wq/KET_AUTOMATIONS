@@ -1,0 +1,56 @@
+{
+  "task_name": "apartamento_luxo_bairro_x",
+  "task_date": "2026-04-27",
+  "campaign_angle": "Você não compra um apartamento. Você compra um estilo de vida.",
+  "jobs": [
+    {
+      "job_name": "research_agent",
+      "status": "complete",
+      "dependencies": [],
+      "outputs": ["research/research_output.json"],
+      "notes": "Web research sobre mercado imobiliário de luxo Brasil 2026. Ângulo Quiet Luxury identificado como dominante."
+    },
+    {
+      "job_name": "ad_creative_designer",
+      "status": "complete",
+      "dependencies": ["research_agent"],
+      "outputs": ["ads/layout.json", "ads/ad.html", "ads/styles.css", "ads/instagram_ad.png"],
+      "notes": "Template lifestyle. instagram_ad.png gerado via Playwright screenshot.js (90 KB)."
+    },
+    {
+      "job_name": "video_ad_specialist",
+      "status": "complete",
+      "dependencies": ["research_agent"],
+      "outputs": ["video/video_scene_spec.json", "video/apartamento_luxo.mp4"],
+      "notes": "6 scenes, strategy: lifestyle, 15s, 9:16. Renderizado via Remotion (AptLuxo). 23.5 MB — Quality Gate OK (> 1 MB)."
+    },
+    {
+      "job_name": "copywriter_agent",
+      "status": "complete",
+      "dependencies": ["research_agent"],
+      "outputs": [
+        "copy/threads_post.txt",
+        "copy/instagram_caption.txt",
+        "copy/youtube_metadata.json"
+      ],
+      "notes": "Ângulo único mantido consistente em todas as plataformas. Regras 1–7 aplicadas. Copy diferenciado por plataforma."
+    },
+    {
+      "job_name": "distribution_agent",
+      "status": "complete",
+      "dependencies": ["ad_creative_designer", "video_ad_specialist", "copywriter_agent"],
+      "outputs": ["Publish apartamento_luxo_bairro_x 2026-04-27.md"],
+      "notes": "Publish MD file gerado. Supabase upload e renders pendentes antes da publicação. Publicação é manual."
+    }
+  ],
+  "pipeline_status": "complete",
+  "quality_gate": {
+    "copy_approved": true,
+    "renders_complete": ["ads/instagram_ad.png (90 KB)", "video/apartamento_luxo.mp4 (23.5 MB)"],
+    "supabase_upload_pending": true,
+    "auto_approve": false,
+    "publication_blocked": "aguardando aprovação explícita do usuário"
+  },
+  "outputs_path": "outputs/apartamento_luxo_bairro_x_2026-04-27/",
+  "publish_file": "outputs/apartamento_luxo_bairro_x_2026-04-27/Publish apartamento_luxo_bairro_x 2026-04-27.md"
+}

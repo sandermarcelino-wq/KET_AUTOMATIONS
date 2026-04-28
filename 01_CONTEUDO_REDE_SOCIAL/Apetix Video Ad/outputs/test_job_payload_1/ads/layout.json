@@ -1,0 +1,118 @@
+{
+  "_agent": "Ad Creative Designer",
+  "_task": "test_job_payload_1",
+  "_date": "2026-03-31",
+  "_test": true,
+
+  "format": "instagram_square",
+  "width": 1080,
+  "height": 1080,
+  "template": "product_focus",
+  "aesthetic": "dark_premium",
+  "background": "#0a0a0a",
+
+  "palette": {
+    "primary": "#C9A84C",
+    "accent": "#FF3B30",
+    "text_main": "#FFFFFF",
+    "text_sub": "#AAAAAA",
+    "surface": "#1a1a1a"
+  },
+
+  "elements": [
+    {
+      "type": "background_gradient",
+      "from": "#0e0005",
+      "to": "#000000",
+      "direction": "180deg"
+    },
+    {
+      "type": "eyebrow",
+      "text": "⚠ TEST — Apetix",
+      "x": 80,
+      "y": 90,
+      "fontSize": 28,
+      "color": "#FF3B30",
+      "fontWeight": 600,
+      "letterSpacing": 3,
+      "textTransform": "uppercase"
+    },
+    {
+      "type": "headline",
+      "text": "Você não tem fome.",
+      "x": 80,
+      "y": 200,
+      "fontSize": 96,
+      "color": "#FFFFFF",
+      "fontWeight": 900,
+      "lineHeight": 1.05,
+      "letterSpacing": -2,
+      "textTransform": "uppercase"
+    },
+    {
+      "type": "headline_accent",
+      "text": "Você está sendo controlado.",
+      "x": 80,
+      "y": 320,
+      "fontSize": 64,
+      "color": "#FF3B30",
+      "fontWeight": 900,
+      "textTransform": "uppercase",
+      "letterSpacing": -1
+    },
+    {
+      "type": "divider",
+      "x": 80,
+      "y": 430,
+      "width": 280,
+      "height": 3,
+      "color": "#C9A84C"
+    },
+    {
+      "type": "benefit_list",
+      "items": ["✓ Menos fome", "✓ Mais controle", "✓ Clareza mental"],
+      "x": 80,
+      "y": 480,
+      "fontSize": 52,
+      "color": "#FFFFFF",
+      "fontWeight": 700,
+      "lineHeight": 1.6,
+      "checkColor": "#4CAF50"
+    },
+    {
+      "type": "subtext",
+      "text": "Efeito parecido com canetas emagrecedoras\npor menos da metade do preço.",
+      "x": 80,
+      "y": 730,
+      "fontSize": 34,
+      "color": "#AAAAAA",
+      "fontWeight": 500,
+      "lineHeight": 1.5
+    },
+    {
+      "type": "cta_button",
+      "text": "Comece hoje com Apetix",
+      "x": 80,
+      "y": 880,
+      "width": 920,
+      "height": 90,
+      "fontSize": 42,
+      "color": "#FFFFFF",
+      "fontWeight": 900,
+      "backgroundColor": "#FF3B30",
+      "borderRadius": 20,
+      "textTransform": "uppercase"
+    },
+    {
+      "type": "brand_watermark",
+      "text": "Apetix",
+      "x": 80,
+      "y": 1010,
+      "fontSize": 22,
+      "color": "#C9A84C",
+      "fontWeight": 600,
+      "letterSpacing": 4,
+      "textTransform": "uppercase"
+    }
+  ]
+}

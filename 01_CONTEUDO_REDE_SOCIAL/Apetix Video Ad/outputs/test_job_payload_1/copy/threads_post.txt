@@ -1,0 +1,12 @@
+[TEST OUTPUT — test_job_payload_1 — 2026-03-31]
+Campaign Angle: Você não tem fome. Você está sendo controlado.
+Agent: Copywriter Agent
+Platform: Threads
+
+---
+
+Você não tem fome.
+
+Você está sendo controlado pelo seu próprio apetite desregulado.
+
+Apetix resolve isso — sem caneta, sem preço absurdo.

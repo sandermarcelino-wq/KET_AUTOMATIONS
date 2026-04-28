@@ -1,0 +1,19 @@
+{
+  "task_name": "test_job_payload_1",
+  "task_date": "2026-03-31",
+  "test": true,
+  "purpose": "Teste de execução completa do pipeline do início ao fim.",
+  "product": "Apetix",
+  "niche": "suplemento controle de apetite",
+  "audience": "pessoas que lutam contra compulsão alimentar e querem perder peso",
+  "source_folder": null,
+  "user_flags": {
+    "skip_research": false,
+    "skip_image": false,
+    "skip_video": false,
+    "dry_run": true
+  },
+  "platform_targets": ["instagram", "youtube"],
+  "output_folder": "outputs/test_job_payload_1/",
+  "notes": "Dry-run. Nenhum API posting real. Todos os outputs são labeleados como TEST. Supabase uploads são simulados com placeholder URLs."
+}

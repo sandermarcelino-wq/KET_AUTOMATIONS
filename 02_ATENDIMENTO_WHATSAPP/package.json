@@ -1,0 +1,14 @@
+{
+  "name": "whatsapp-receiver",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "whatsapp_receiver.js",
+  "scripts": {
+    "start": "node whatsapp_receiver.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "express": "^4.19.0",
+    "redis": "^4.7.0"
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "_agent": "Video Ad Specialist",
+  "_task": "test_job_payload_1",
+  "_date": "2026-03-31",
+  "_test": true,
+
+  "composition": "AdVideo",
+  "props": {
+    "style": "problem_solution",
+    "duration": 15,
+    "platform": "instagram_reels",
+    "aspect_ratio": "9:16",
+    "fps": 30,
+    "aesthetic": "ugc_realistic",
+
+    "scenes": [
+      {
+        "type": "hook",
+        "from": 0,
+        "durationSeconds": 2,
+        "text": "Você não tem fome.",
+        "subtext": "Você está sendo controlado.",
+        "visual": "dark_red_radial_gradient",
+        "animation": "spring_scale_in",
+        "grain": true
+      },
+      {
+        "type": "problem",
+        "from": 2,
+        "durationSeconds": 3,
+        "items": [
+          "Vontade de comer toda hora",
+          "Ansiedade à noite",
+          "Compulsão fora de controle"
+        ],
+        "visual": "dark_fullbleed_cycle",
+        "animation": "zoom_fade_cycle",
+        "grain": true
+      },
+      {
+        "type": "reframe",
+        "from": 5,
+        "durationSeconds": 2,
+        "text": "O problema não é você.",
+        "subtext": "É o seu apetite desregulado.",
+        "visual": "pure_black",
+        "animation": "fade_in"
+      },
+      {
+        "type": "product",
+        "from": 7,
+        "durationSeconds": 3,
+        "brand": "Apetix",
+        "tagline": "Controle real do apetite",
+        "visual": "lifestyle_photo_ken_burns",
+        "imageSrc": "public/appetix-lifestyle.jpg",
+        "textColor": "#C9A84C",
+        "animation": "slide_up_spring"
+      },
+      {
+        "type": "benefit",
+        "from": 10,
+        "durationSeconds": 3,
+        "items": ["Menos fome", "Mais controle", "Clareza mental"],
+        "subtext": [
+          "Efeito parecido com canetas emagrecedoras",
+          "Por menos da metade do preço"
+        ],
+        "visual": "dark_surface",
+        "animation": "stagger_slide_up",
+        "grain": true
+      },
+      {
+        "type": "cta",
+        "from": 13,
+        "durationSeconds": 2,
+        "text": "Ou você controla\na fome...\n...ou ela\ncontrola você.",
+        "ctaButton": "Comece hoje com Apetix",
+        "ctaColor": "#FF3B30",
+        "visual": "dark_purple_gradient",
+        "animation": "fade_in",
+        "grain": true
+      }
+    ],
+
+    "svgOverlays": [
+      {
+        "scene": "hook",
+        "element": "grain_fractal_noise",
+        "opacity": 0.065,
+        "animatePerFrame": true
+      },
+      {
+        "scene": "cta",
+        "element": "vignette_radial",
+        "opacity": 0.72
+      }
+    ],
+
+    "remotionConfig": {
+      "component": "AdVideo",
+      "file": "src/Composition.tsx",
+      "renderCommand": "npm run render",
+      "output": "out/appetix-ad.mp4"
+    }
+  }
+}

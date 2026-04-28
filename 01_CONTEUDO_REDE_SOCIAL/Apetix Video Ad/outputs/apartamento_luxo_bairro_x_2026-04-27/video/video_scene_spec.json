@@ -1,0 +1,93 @@
+{
+  "_agent": "Video Ad Specialist",
+  "_task": "apartamento_luxo_bairro_x",
+  "_date": "2026-04-27",
+  "campaign_angle": "Você não compra um apartamento. Você compra um estilo de vida.",
+
+  "composition": "AdVideo",
+  "props": {
+    "style": "lifestyle",
+    "duration": 15,
+    "platform": "instagram_reels",
+    "aspect_ratio": "9:16",
+    "aesthetic": "quiet_luxury_dark",
+    "color_palette": {
+      "bg_primary": "#0B0B0B",
+      "accent": "#C9A84C",
+      "text": "#F5F0E8",
+      "text_muted": "#888888"
+    },
+    "scenes": [
+      {
+        "type": "hook",
+        "from_s": 0,
+        "dur_s": 2.5,
+        "text": "Quantas horas você perde por dia por morar no lugar errado?",
+        "visual": "fade_in_black — texto branco centralizado, fonte serifada elegante",
+        "animation": "scale_pop_in",
+        "notes": "Pergunta direta que ativa consciência de problema sem mencionar o produto"
+      },
+      {
+        "type": "problem",
+        "from_s": 2.5,
+        "dur_s": 3,
+        "text": "Trânsito. Vizinhança ruim. Prédio que envergonha.",
+        "visual": "três cards rápidos — fundo escuro, texto vermelho sutil",
+        "animation": "stagger_slide_up",
+        "notes": "Três dores curtas em cards sequenciais — pacing rápido"
+      },
+      {
+        "type": "reframe",
+        "from_s": 5.5,
+        "dur_s": 2,
+        "text": "O problema não é onde você mora.",
+        "text_secondary": "É que você ainda não encontrou o endereço certo.",
+        "visual": "fundo preto absoluto — silêncio visual antes do reveal do produto",
+        "animation": "fade_in_slow"
+      },
+      {
+        "type": "product",
+        "from_s": 7.5,
+        "dur_s": 3,
+        "text": "Bairro X",
+        "text_secondary": "Apartamento de Luxo",
+        "visual": "lifestyle shot full-bleed + Ken Burns — texto dourado no rodapé, linha divisória animada",
+        "animation": "ken_burns_reveal + text_slide_up",
+        "notes": "Momento de reveal — mais impacto visual, menos texto"
+      },
+      {
+        "type": "benefit",
+        "from_s": 10.5,
+        "dur_s": 2.5,
+        "items": [
+          "Localização que otimiza seu tempo",
+          "Design personalizado para o seu estilo",
+          "Valorização consistente"
+        ],
+        "visual": "checklist estético — ícone dourado + texto branco, aparece em stagger",
+        "animation": "stagger_fade_up"
+      },
+      {
+        "type": "cta",
+        "from_s": 13,
+        "dur_s": 2,
+        "text": "Ou você escolhe o endereço...\n...ou ele escolhe por você.",
+        "cta_button": "Conheça o Bairro X",
+        "visual": "fundo escuro com vignette — botão dourado pulsando levemente",
+        "animation": "fade_in + button_pulse",
+        "notes": "Espelha estrutura de hook do Apetix: binarismo urgente + CTA"
+      }
+    ]
+  },
+
+  "remotion_notes": {
+    "fps": 30,
+    "total_frames": 450,
+    "font_primary": "Cormorant Garamond, serif",
+    "font_secondary": "Inter, sans-serif",
+    "grain_overlay": true,
+    "grain_opacity": 0.04,
+    "camera_shake": false,
+    "transitions": "cross_fade entre scenes"
+  }
+}

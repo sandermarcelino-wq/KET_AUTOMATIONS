@@ -1,0 +1,17 @@
+{
+  "task_name": "apartamento_luxo_bairro_x",
+  "task_date": "2026-04-27",
+  "product": "Apartamento de Luxo no Bairro X",
+  "niche": "imóveis de luxo",
+  "audience": "compradores de alto poder aquisitivo, investidores imobiliários, famílias em busca de upgrade de vida",
+  "source_folder": null,
+  "user_flags": {
+    "skip_research": false,
+    "skip_image": false,
+    "skip_video": false,
+    "auto_approve": false
+  },
+  "platform_targets": ["instagram", "youtube"],
+  "output_folder": "outputs/apartamento_luxo_bairro_x_2026-04-27/",
+  "notes": "Campanha para lançamento de apartamento de luxo. Publicação é manual via Publish MD file."
+}

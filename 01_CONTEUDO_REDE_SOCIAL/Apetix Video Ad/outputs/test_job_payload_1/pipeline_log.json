@@ -1,0 +1,62 @@
+{
+  "_agent": "Orchestrator",
+  "task_name": "test_job_payload_1",
+  "task_date": "2026-03-31",
+  "dry_run": true,
+  "pipeline_status": "complete",
+  "outputs_path": "outputs/test_job_payload_1/",
+
+  "jobs": [
+    {
+      "job_name": "research_agent",
+      "status": "complete",
+      "dependencies": [],
+      "outputs": ["research/research_output.json"],
+      "notes": "Tavily search executado — 3 queries paralelas (trends, hooks, competitors)"
+    },
+    {
+      "job_name": "ad_creative_designer",
+      "status": "complete",
+      "dependencies": ["research_agent"],
+      "outputs": ["ads/layout.json", "ads/ad.html", "ads/styles.css"],
+      "notes": "Template product_focus, dark_premium aesthetic, 1080x1080. instagram_ad.png pendente Playwright."
+    },
+    {
+      "job_name": "video_ad_specialist",
+      "status": "complete",
+      "dependencies": ["research_agent"],
+      "outputs": ["video/video_ad_scenes.json"],
+      "notes": "6 scenes (hook/problem/reframe/product/benefit/cta), 15s, 9:16, custom SVG grain overlays. Render: npm run render."
+    },
+    {
+      "job_name": "copywriter_agent",
+      "status": "complete",
+      "dependencies": ["research_agent"],
+      "outputs": [
+        "copy/instagram_caption.txt",
+        "copy/threads_post.txt",
+        "copy/youtube_metadata.json"
+      ],
+      "notes": "Ângulo único consistente em todas as plataformas. Adaptação nativa por plataforma."
+    },
+    {
+      "job_name": "distribution_agent",
+      "status": "complete",
+      "dependencies": [
+        "ad_creative_designer",
+        "video_ad_specialist",
+        "copywriter_agent"
+      ],
+      "outputs": ["Publish test_job_payload_1 2026-03-31.md"],
+      "notes": "Supabase uploads simulados com placeholder URLs. Nenhum posting real executado (dry_run: true)."
+    }
+  ],
+
+  "pending_actions": [
+    "Instalar Playwright → gerar instagram_ad.png",
+    "npm run render → gerar appetix-ad.mp4",
+    "Upload real para Supabase",
+    "Atualizar URLs no Publish MD",
+    "Confirmar publicação via Distribution Agent"
+  ]
+}
