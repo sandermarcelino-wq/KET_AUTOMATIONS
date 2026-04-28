@@ -265,7 +265,7 @@ def _format_ads_report(decisions_data: dict, name_map: dict, summary: dict) -> s
         action = d.get("action", "MAINTAIN")
         groups.setdefault(action, []).append(d)
 
-    lines = [f"🚨 *RELATÓRIO DE ADS — {report_date}*\n"]
+    lines = [f"🚨 RELATÓRIO DE ADS — {report_date}\n"]
 
     for action in ("PAUSE", "SCALE", "RECREATE", "MAINTAIN"):
         items = groups.get(action, [])
@@ -273,18 +273,17 @@ def _format_ads_report(decisions_data: dict, name_map: dict, summary: dict) -> s
             continue
         emoji = ACTION_EMOJI[action]
         label = ACTION_LABEL[action]
-        lines.append(f"{emoji} *{label} ({len(items)}):*")
+        lines.append(f"{emoji} {label} ({len(items)}):")
         for d in items:
             ad_id = d.get("ad_id", "?")
             name = name_map.get(ad_id, ad_id)
             reason = d.get("reason", "")
-            # Trim reason to first sentence for readability
             short_reason = reason.split(".")[0].strip() if reason else ""
             budget = d.get("budget_change", 0)
             budget_str = f" (+{int(budget * 100)}%)" if budget > 0 else ""
             lines.append(f"   • {name}{budget_str}")
             if short_reason:
-                lines.append(f"     _{short_reason}_")
+                lines.append(f"     {short_reason}")
         lines.append("")
 
     # Footer with daily stats
@@ -306,16 +305,14 @@ async def cmd_ads(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if not ADS_DIR.exists():
         await update.message.reply_text(
-            f"Pasta 03_GESTAO_ADS não encontrada em:\n`{ADS_DIR}`",
-            parse_mode="Markdown",
+            f"Pasta 03_GESTAO_ADS não encontrada em:\n{ADS_DIR}"
         )
         return
 
     analyze_script = ADS_DIR / "analyze_ads.py"
     if not analyze_script.exists():
         await update.message.reply_text(
-            f"Script analyze_ads.py não encontrado em:\n`{ADS_DIR}`",
-            parse_mode="Markdown",
+            f"Script analyze_ads.py não encontrado em:\n{ADS_DIR}"
         )
         return
 
@@ -343,8 +340,7 @@ async def _run_analyze_ads(update: Update) -> None:
         if proc.returncode != 0:
             err = (stderr.decode("utf-8", errors="replace")[:800]) if stderr else "sem detalhes"
             await update.message.reply_text(
-                f"analyze_ads.py falhou (código {proc.returncode}).\n```\n{err}\n```",
-                parse_mode="Markdown",
+                f"analyze_ads.py falhou (código {proc.returncode}).\n\n{err}"
             )
             return
 
@@ -363,15 +359,15 @@ async def _run_analyze_ads(update: Update) -> None:
 
         # Telegram messages max 4096 chars — split if needed
         for chunk in _split_message(report, limit=4000):
-            await update.message.reply_text(chunk, parse_mode="Markdown")
+            await update.message.reply_text(chunk)
 
         # Send briefing if RECREATE actions exist
         if briefing_file.exists():
             briefing = briefing_file.read_text(encoding="utf-8").strip()
             if briefing:
-                header = "📋 *Briefing gerado para a Frente 1:*\n\n"
+                header = "📋 Briefing gerado para a Frente 1:\n\n"
                 for chunk in _split_message(header + briefing, limit=4000):
-                    await update.message.reply_text(chunk, parse_mode="Markdown")
+                    await update.message.reply_text(chunk)
 
         log.info("Relatório de ads enviado com sucesso")
 
