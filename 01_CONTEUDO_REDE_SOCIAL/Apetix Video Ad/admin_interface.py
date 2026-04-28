@@ -38,6 +38,7 @@ load_dotenv()
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("TELEGRAM_ADMIN_CHAT_ID")
+BASE_URL_ASSETS = os.getenv("BASE_URL_ASSETS", "").rstrip("/")
 
 PROJECT_ROOT = Path(__file__).parent.resolve()
 ADS_DIR = (PROJECT_ROOT / ".." / ".." / "03_GESTAO_ADS").resolve()
@@ -163,14 +164,13 @@ async def cmd_comando(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     await update.message.reply_text(
-        f"Job criado: *{payload['task_name']}*\n"
+        f"Job criado: {payload['task_name']}\n"
         f"Produto: {payload['product']}\n"
         f"Nicho: {payload['niche']}\n"
         f"Público: {payload['audience']}\n"
         f"Plataformas: {', '.join(payload['platform_targets'])}\n"
         f"Flags: {_format_flags(payload['user_flags'])}\n\n"
-        f"Disparando Orchestrator...",
-        parse_mode="Markdown",
+        f"Disparando Orchestrator..."
     )
     asyncio.create_task(_run_orchestrator(update, payload, str(payload_path)))
 
@@ -192,20 +192,22 @@ async def _run_orchestrator(update: Update, payload: dict, payload_path: str) ->
         stdout, stderr = await proc.communicate()
 
         if proc.returncode == 0:
-            await update.message.reply_text(
-                f"Pipeline concluído!\nCampanha: *{payload['task_name']}*\nOutput: `{payload['output_folder']}`",
-                parse_mode="Markdown",
-            )
+            task_name = payload["task_name"]
+            msg = f"✅ Campanha Pronta!\nNome: {task_name}\n"
+            if BASE_URL_ASSETS:
+                ad_url = f"{BASE_URL_ASSETS}/{task_name}/ads/instagram_ad.png"
+                msg += f"Veja o anúncio aqui:\n{ad_url}"
+            else:
+                msg += f"Output: {payload['output_folder']}"
+            await update.message.reply_text(msg)
         else:
             err = (stderr.decode("utf-8", errors="replace")[:600]) if stderr else "sem detalhes"
             await update.message.reply_text(
-                f"Pipeline falhou (código {proc.returncode}).\n```\n{err}\n```",
-                parse_mode="Markdown",
+                f"Pipeline falhou (código {proc.returncode}).\n\n{err}"
             )
     except FileNotFoundError:
         await update.message.reply_text(
-            f"Claude CLI não encontrado no PATH.\nJob payload salvo em:\n`{payload_path}`",
-            parse_mode="Markdown",
+            f"Claude CLI não encontrado no PATH.\nJob payload salvo em:\n{payload_path}"
         )
     except Exception as exc:
         log.exception("Erro no orchestrator")
@@ -409,13 +411,12 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     payload = json.loads(root_payload.read_text(encoding="utf-8"))
     await update.message.reply_text(
-        f"*Último job (Frente 1):*\n"
-        f"Nome: `{payload.get('task_name', '?')}`\n"
+        f"Último job (Frente 1):\n"
+        f"Nome: {payload.get('task_name', '?')}\n"
         f"Data: {payload.get('task_date', '?')}\n"
         f"Produto: {payload.get('product', '?')}\n"
         f"Nicho: {payload.get('niche', '?')}\n"
-        f"Output: `{payload.get('output_folder', '?')}`",
-        parse_mode="Markdown",
+        f"Output: {payload.get('output_folder', '?')}"
     )
 
 
@@ -456,8 +457,7 @@ async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> 
     if isinstance(update, Update) and update.message:
         try:
             await update.message.reply_text(
-                f"Ocorreu um erro interno:\n`{context.error}`\nVerifique bot.log para detalhes.",
-                parse_mode="Markdown",
+                f"Ocorreu um erro interno:\n{context.error}\nVerifique bot.log para detalhes."
             )
         except Exception:
             pass
