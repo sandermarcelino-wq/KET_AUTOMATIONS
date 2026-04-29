@@ -23,7 +23,7 @@ import json
 import logging
 import os
 import asyncio
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -212,6 +212,232 @@ async def _run_orchestrator(update: Update, payload: dict, payload_path: str) ->
     except Exception as exc:
         log.exception("Erro no orchestrator")
         await update.message.reply_text(f"Erro inesperado no Orchestrator:\n{exc}")
+
+
+# ---------------------------------------------------------------------------
+# /semana — Batch semanal (run_weekly_batch + meta_auto_publisher)
+# ---------------------------------------------------------------------------
+
+DIAS_PT = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+
+
+def _parse_semana(text: str) -> dict:
+    """
+    Aceita dois formatos:
+      /semana Apetix
+      /semana produto: Apetix | nicho: controle de apetite | público: mulheres 25-45
+    Flags opcionais: dry_run
+    """
+    raw = text.strip()
+    for prefix in ("/semana", "/SEMANA"):
+        if raw.startswith(prefix):
+            raw = raw[len(prefix):].strip()
+            break
+
+    params: dict = {
+        "product": "",
+        "niche": "",
+        "audience": "",
+        "platform_targets": ["instagram", "youtube"],
+        "dry_run": False,
+    }
+
+    if "|" in raw or ":" in raw:
+        for part in [p.strip() for p in raw.split("|")]:
+            if not part:
+                continue
+            if part.lower() == "dry_run":
+                params["dry_run"] = True
+                continue
+            if ":" in part:
+                key, _, value = part.partition(":")
+                field = FIELD_ALIASES.get(key.strip().lower())
+                value = value.strip()
+                if field == "platform_targets":
+                    params["platform_targets"] = [
+                        p.strip() for p in value.replace(",", " ").split() if p.strip()
+                    ]
+                elif field in params:
+                    params[field] = value
+    else:
+        params["product"] = raw
+
+    if not params["product"]:
+        raise ValueError("Nome do produto obrigatório. Exemplo: /semana Apetix")
+    if not params["niche"]:
+        params["niche"] = params["product"]
+    if not params["audience"]:
+        params["audience"] = f"público interessado em {params['product']}"
+
+    return params
+
+
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7
+    return today + timedelta(days=days_ahead)
+
+
+def _format_semana_summary(publish_report: dict) -> str:
+    batch = publish_report.get("batch", "?")
+    days_report = publish_report.get("days", [])
+
+    scheduled = [d for d in days_report if d.get("status") == "scheduled"]
+    failed = [d for d in days_report if d.get("status") == "failed"]
+
+    lines = [f"Semana agendada: {batch}"]
+    lines.append(f"{len(scheduled)}/7 posts prontos no Instagram\n")
+
+    for entry in days_report:
+        day_date = entry.get("date", "?")
+        hour = entry.get("hour", "?")
+        status = entry.get("status", "?")
+        angle = entry.get("angle", "")
+        asset_url = entry.get("asset_url", "")
+
+        try:
+            d = date.fromisoformat(day_date)
+            weekday_label = DIAS_PT[d.weekday()]
+            date_label = f"{d.day:02d}/{d.month:02d}"
+        except Exception:
+            weekday_label = "?"
+            date_label = day_date
+
+        if status == "scheduled":
+            icon = "✅"
+            line = f"{icon} {weekday_label} {date_label} {hour} — {angle}"
+            if asset_url:
+                line += f"\n{asset_url}"
+        else:
+            error = entry.get("error", "erro desconhecido")
+            line = f"❌ {weekday_label} {date_label} — FALHOU: {error}"
+
+        lines.append(line)
+
+    if failed:
+        lines.append(f"\n{len(failed)} dia(s) falharam. Verifique publish_report.json.")
+
+    return "\n".join(lines)
+
+
+async def cmd_semana(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        await update.message.reply_text("Acesso negado.")
+        return
+
+    try:
+        params = _parse_semana(update.message.text or "")
+    except ValueError as exc:
+        await update.message.reply_text(
+            f"{exc}\n\n"
+            "Formatos aceitos:\n"
+            "/semana Apetix\n"
+            "/semana produto: X | nicho: Y | público: Z | dry_run"
+        )
+        return
+
+    dry_label = " (dry-run)" if params["dry_run"] else ""
+    await update.message.reply_text(
+        f"Iniciando batch semanal{dry_label}...\n"
+        f"Produto: {params['product']}\n"
+        f"Nicho: {params['niche']}\n"
+        f"Semana de: {_next_monday().isoformat()}\n\n"
+        f"Fase 1/2: gerando 7 dias de conteúdo. Isso leva alguns minutos."
+    )
+    asyncio.create_task(_run_semana(update, params))
+
+
+async def _run_semana(update: Update, params: dict) -> None:
+    batch_name = f"campanha_semanal_{_next_monday().isoformat()}"
+    batch_dir = PROJECT_ROOT / "outputs" / batch_name
+
+    # ── Fase 1: run_weekly_batch.py ──────────────────────────────────────
+    batch_script = PROJECT_ROOT / "run_weekly_batch.py"
+    cmd = [
+        "python", str(batch_script),
+        "--produto", params["product"],
+        "--nicho",   params["niche"],
+        "--publico", params["audience"],
+        "--plataformas", *params["platform_targets"],
+    ]
+    if params["dry_run"]:
+        cmd.append("--dry-run")
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=str(PROJECT_ROOT),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        log.info("run_weekly_batch.py iniciado (PID %s)", proc.pid)
+        _, stderr = await proc.communicate()
+
+        if proc.returncode != 0:
+            err = stderr.decode("utf-8", errors="replace")[:600] if stderr else "sem detalhes"
+            await update.message.reply_text(
+                f"run_weekly_batch.py falhou (código {proc.returncode}).\n\n{err}"
+            )
+            return
+    except Exception as exc:
+        log.exception("Erro em run_weekly_batch")
+        await update.message.reply_text(f"Erro ao rodar batch semanal:\n{exc}")
+        return
+
+    await update.message.reply_text(
+        f"Fase 1/2 concluída. 7 dias de conteúdo gerados.\n"
+        f"Fase 2/2: agendando posts no Instagram..."
+    )
+
+    # ── Fase 2: meta_auto_publisher.py ───────────────────────────────────
+    publisher_script = PROJECT_ROOT / "meta_auto_publisher.py"
+    pub_cmd = ["python", str(publisher_script), "--batch", str(batch_dir)]
+    if params["dry_run"]:
+        pub_cmd.append("--dry-run")
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *pub_cmd,
+            cwd=str(PROJECT_ROOT),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        log.info("meta_auto_publisher.py iniciado (PID %s)", proc.pid)
+        _, stderr = await proc.communicate()
+
+        if proc.returncode != 0:
+            err = stderr.decode("utf-8", errors="replace")[:600] if stderr else "sem detalhes"
+            await update.message.reply_text(
+                f"meta_auto_publisher.py falhou (código {proc.returncode}).\n\n{err}"
+            )
+            return
+    except Exception as exc:
+        log.exception("Erro em meta_auto_publisher")
+        await update.message.reply_text(f"Erro ao agendar posts:\n{exc}")
+        return
+
+    # ── Sumário final ─────────────────────────────────────────────────────
+    try:
+        publish_report_path = batch_dir / "publish_report.json"
+
+        if not publish_report_path.exists():
+            await update.message.reply_text(
+                "Posts agendados mas publish_report.json não encontrado.\n"
+                f"Verifique: {batch_dir}"
+            )
+            return
+
+        publish_report = json.loads(publish_report_path.read_text(encoding="utf-8"))
+
+        summary = _format_semana_summary(publish_report)
+        for chunk in _split_message(summary, limit=4000):
+            await update.message.reply_text(chunk)
+
+        log.info("Semana agendada com sucesso: %s", batch_name)
+
+    except Exception as exc:
+        log.exception("Erro ao montar sumário da semana")
+        await update.message.reply_text(f"Posts agendados, mas erro ao montar resumo:\n{exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -430,11 +656,11 @@ async def cmd_ajuda(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "*Frente 1 — Conteúdo:*\n"
         "`/comando produto: X | nicho: Y | público: Z`\n"
         "Cria campanha e dispara o Orchestrator.\n\n"
-        "_Campos opcionais:_\n"
-        "• `plataformas:` instagram youtube\n"
-        "• `notas:` instruções extras\n"
-        "• `nome:` task_name manual\n\n"
-        "_Flags (sem dois-pontos):_\n"
+        "`/semana Apetix`\n"
+        "Gera 7 dias de conteúdo e agenda tudo no Instagram.\n"
+        "Formato completo: `/semana produto: X | nicho: Y | público: Z`\n"
+        "Flag opcional: `dry_run`\n\n"
+        "_Flags do /comando (sem dois-pontos):_\n"
         "`skip_research` `skip_image` `skip_video` `auto_approve` `dry_run`\n\n"
         "─────────────────────\n"
         "*Frente 3 — Gestão de Ads:*\n"
@@ -477,6 +703,7 @@ def main() -> None:
 
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("comando", cmd_comando))
+    app.add_handler(CommandHandler("semana", cmd_semana))
     app.add_handler(CommandHandler("ads", cmd_ads))
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("ajuda", cmd_ajuda))
