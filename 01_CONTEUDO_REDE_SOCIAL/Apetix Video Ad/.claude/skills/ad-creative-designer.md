@@ -1,69 +1,56 @@
-# Ad Creative Designer Skill
+# Ad Creative Designer Skill (OpenAI Edition)
 
 ## Propósito
-
-Gera um design blueprint (layout JSON) para image ads, que um frontend renderer converte em PNG exportável. A IA cria a especificação de design, não a imagem em si.
+Atua como um Diretor de Arte Sênior e Especialista em Engenharia de Prompt para DALL-E 3. Sua função é converter briefings de produtos e personagens em instruções visuais de altíssimo nível para geração de imagens via API da OpenAI, priorizando a estética 3D Pixar/Disney.
 
 ---
 
 ## Pipeline Position
 
 ```
-User Prompt → Image Ads Agent → Ad Creative Designer Skill → Layout JSON → Frontend Renderer → Export PNG
+User Input → Copywriter Agent → Ad Creative Designer Skill → DALL-E Prompt (JSON) → OpenAI API Generator → instagram_ad.png
 ```
 
 ---
 
 ## Core Responsibilities
 
-### Step 1–6: Layout JSON Generation
+### Step 1: Análise de Contexto (Novela vs. Luxo)
+- **Novela Appetix:** Criar personagens antropomórficos (ingredientes vivos). Devem ser fofos, carismáticos e expressivos.
+- **Imobiliária/Educação:** Criar cenários cinematográficos, ultra-realistas ou conceituais de alto padrão.
 
-Gera especificação estruturada de design para o ad.
+### Step 2: Construção do Prompt Mestre (Inglês)
+Você deve redigir o prompt final em **Inglês** para máxima performance do DALL-E 3. O prompt deve seguir esta estrutura de "Maldade Visual":
+1. **Core Subject:** Descrição física detalhada + ação/pose.
+2. **Style Tag:** "Pixar-style 3D animation, Disney character design, stylized big eyes".
+3. **Lighting:** "Cinematic warm lighting, volumetric rim light, soft global illumination".
+4. **Materials:** "Subsurface scattering for skin/petals, Octane Render, 8k resolution".
+5. **Background:** "Dreamy blurred background, high-end luxury aesthetic".
 
-**Input:**
-| Input | Exemplo |
-|-------|---------|
-| Product | Kit Definitivo N8N |
-| Audience | Freelancers e donos de agência |
-| Platform | Instagram (square 1080x1080) |
-| Style | Editorial Terroso |
+---
 
-**Output — Layout JSON:**
+## Matriz de Estilo "Ket Elite"
+
+| Elemento | Especificação Obrigatória |
+| :--- | :--- |
+| **Estética Geral** | 3D Pixar / Renderização Blender / Disney Animation |
+| **Personagens** | Formas arredondadas (chubby), olhos grandes, expressões amigáveis |
+| **Paleta de Cores** | Cores saturadas (Roxo, Dourado, Verde) com acabamento premium |
+| **Proporção (Aspect)** | 1024x1792 (Vertical 9:16) ou 1024x1024 (Quadrado) |
+
+---
+
+## Output Format (Mandatório)
+
+O agente deve retornar **EXATAMENTE** um objeto JSON. Não adicione texto explicativo antes ou depois. O script `generate_dalle_image.py` depende deste formato:
 
 ```json
 {
-  "format": "instagram_square",
-  "width": 1080,
-  "height": 1080,
-  "background": "#F5F0E8",
-  "elements": [
-    {
-      "type": "headline",
-      "text": "Para de Construir do Zero",
-      "x": 80,
-      "y": 120,
-      "fontSize": 64
-    },
-    {
-      "type": "subtext",
-      "text": "88 Templates Testados em Produção",
-      "x": 80,
-      "y": 200
-    },
-    {
-      "type": "cta",
-      "text": "Copia e Cola",
-      "x": 80,
-      "y": 350
-    },
-    {
-      "type": "image",
-      "src": "/assets/claude_code_terminal.png",
-      "x": 600,
-      "y": 200,
-      "width": 300
-    }
-  ]
+  "task_name": "NOME_DA_TAREFA",
+  "dalle_prompt": "A detailed 3D Pixar-style character of [INGREDIENTE], chubby round body, cute expressive face with big calm eyes, gold heart badge, soft warm cinematic lighting, luxury dark green background, 8k render, masterpiece",
+  "size": "1024x1792",
+  "quality": "hd",
+  "style": "vivid"
 }
 ```
 
@@ -82,71 +69,22 @@ O agente escolhe o template — isso previne layouts feios.
 
 ---
 
-### Step 7: HTML Ad Rendering
+### Step 3: Output Storage Rules
 
-Após gerar o design JSON, converte o layout em HTML advertisement renderizado.
+1. O JSON gerado deve ser salvo temporariamente para auditoria.
 
-**Gerar os arquivos:**
-- `ad.html`
-- `styles.css`
-
-**Requisitos:**
-- Renderizar a 1080×1080 para formato Instagram square
-- Tipografia prioriza claramente: headline > subtext > CTA
-- CTA deve ser visualmente distinto (button style)
-- Layout deve corresponder ao template selecionado
-
-**Estrutura HTML exemplo:**
-```html
-<div class="ad-container">
-  <div class="headline">Para de Construir do Zero</div>
-  <div class="subtext">88 templates testados em produção por R$47</div>
-  <img class="product" src="claude_code_terminal.png" />
-  <button class="cta">Copia e Cola</button>
-</div>
-```
-
-**CSS deve enforçar:**
-- `width: 1080px` / `height: 1080px`
-- Espaçamento balanceado
-- Layout de marketing moderno e limpo
+2. A imagem final baixada pela API da OpenAI deve ser salva obrigatoriamente como:
+outputs/TASKNAME_DATE/ads/instagram_ad.png
 
 ---
 
-### Step 8: Playwright Screenshot Rendering
+### Regras Anti-Erro
 
-Após gerar o HTML, renderizar usando Playwright.
+  NUNCA gere código HTML ou CSS.
 
-**Processo:**
-1. Lançar Chromium via Playwright
-2. Set viewport para 1080×1080
-3. Carregar o `ad.html` gerado
-4. Aguardar imagens renderizarem
-5. Capturar screenshot
-6. Salvar como `instagram_ad.png`
+  NUNCA use o Playwright para screenshots nesta versão.
 
----
+  Se o usuário pedir "Realismo", mantenha a iluminação cinematográfica mas remova a tag "Pixar".
 
-### Step 9: Output Storage Rules
+  Garanta que o nome do personagem esteja descrito para aparecer como um "badge" ou elemento 3D na cena.
 
-Todos os arquivos devem ser salvos em:
-
-```
-outputs/TASKNAME_DATE/ads/
-```
-
-**Arquivos gerados:**
-- `ad.html`
-- `styles.css`
-- `instagram_ad.png`
-
-Nenhum arquivo gerado fora do diretório `outputs/`.
-
----
-
-## Outputs Finais
-
-A skill produz três deliverables:
-1. **Design JSON** — layout spec estruturado
-2. **HTML ad layout** — `ad.html` + `styles.css`
-3. **Imagem final renderizada** — `instagram_ad.png` via Playwright
