@@ -1,0 +1,50 @@
+{
+  "name": "construtora-ia",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,painel 'npm:dev:api' 'npm:dev:admin'",
+    "dev:api": "node --watch --import tsx apps/api/src/server.ts",
+    "dev:admin": "vite --config apps/admin/vite.config.ts",
+    "build": "tsc --noEmit && vite build --config apps/admin/vite.config.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "start": "node --import tsx apps/api/src/server.ts",
+    "demo": "node --import tsx scripts/demo.ts",
+    "format": "prettier --write apps packages tests scripts *.json *.js vitest.config.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.3.14",
+    "@hono/node-server": "^1.19.0",
+    "csv-parse": "^6.1.0",
+    "decimal.js": "^10.6.0",
+    "hono": "^4.10.0",
+    "lucide-react": "^0.553.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "concurrently": "^9.2.0",
+    "eslint": "^9.39.0",
+    "prettier": "^3.10.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.46.0",
+    "vite": "^7.2.0",
+    "vitest": "^4.0.0"
+  }
+}

@@ -1,0 +1,380 @@
+{
+  "finalidade": "Massa ilustrativa reservada à Etapa 3; não importada pela aplicação da Etapa 0. Não representa vendas nem dinheiro recebido.",
+  "ficticio": true,
+  "unidades": [
+    {
+      "unidade": "101",
+      "empreendimento": "Residencial Aurora — fictício",
+      "comprador": "Comprador Fictício 101",
+      "valorNominal": "120000.00",
+      "correcao": {
+        "tipo": "SEM_CORRECAO_APENAS_NESTE_EXEMPLO",
+        "observacao": "Não aplicar a contratos reais. Cada contrato futuro exigirá regra própria validada."
+      },
+      "cronograma": [
+        {
+          "numero": 0,
+          "natureza": "entrada",
+          "vencimento": "2026-12-10",
+          "valor": "24000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 1,
+          "natureza": "parcela",
+          "vencimento": "2027-01-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 2,
+          "natureza": "parcela",
+          "vencimento": "2027-02-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 3,
+          "natureza": "parcela",
+          "vencimento": "2027-03-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 4,
+          "natureza": "parcela",
+          "vencimento": "2027-04-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 5,
+          "natureza": "parcela",
+          "vencimento": "2027-05-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 6,
+          "natureza": "parcela",
+          "vencimento": "2027-06-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 7,
+          "natureza": "parcela",
+          "vencimento": "2027-07-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 8,
+          "natureza": "parcela",
+          "vencimento": "2027-08-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 9,
+          "natureza": "parcela",
+          "vencimento": "2027-09-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 10,
+          "natureza": "parcela",
+          "vencimento": "2027-10-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 11,
+          "natureza": "parcela",
+          "vencimento": "2027-11-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 12,
+          "natureza": "parcela",
+          "vencimento": "2027-12-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 13,
+          "natureza": "parcela",
+          "vencimento": "2028-01-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 14,
+          "natureza": "parcela",
+          "vencimento": "2028-02-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 15,
+          "natureza": "parcela",
+          "vencimento": "2028-03-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 16,
+          "natureza": "parcela",
+          "vencimento": "2028-04-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 17,
+          "natureza": "parcela",
+          "vencimento": "2028-05-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 18,
+          "natureza": "parcela",
+          "vencimento": "2028-06-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 19,
+          "natureza": "parcela",
+          "vencimento": "2028-07-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 20,
+          "natureza": "parcela",
+          "vencimento": "2028-08-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 21,
+          "natureza": "parcela",
+          "vencimento": "2028-09-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 22,
+          "natureza": "parcela",
+          "vencimento": "2028-10-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 23,
+          "natureza": "parcela",
+          "vencimento": "2028-11-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 24,
+          "natureza": "parcela",
+          "vencimento": "2028-12-10",
+          "valor": "4000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        }
+      ]
+    },
+    {
+      "unidade": "102",
+      "empreendimento": "Residencial Aurora — fictício",
+      "comprador": "Comprador Fictício 102",
+      "valorNominal": "150000.00",
+      "correcao": {
+        "tipo": "SEM_CORRECAO_APENAS_NESTE_EXEMPLO",
+        "observacao": "Não aplicar a contratos reais. Cada contrato futuro exigirá regra própria validada."
+      },
+      "cronograma": [
+        {
+          "numero": 0,
+          "natureza": "entrada",
+          "vencimento": "2026-12-10",
+          "valor": "30000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 1,
+          "natureza": "parcela",
+          "vencimento": "2027-01-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 2,
+          "natureza": "parcela",
+          "vencimento": "2027-02-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 3,
+          "natureza": "parcela",
+          "vencimento": "2027-03-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 4,
+          "natureza": "parcela",
+          "vencimento": "2027-04-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 5,
+          "natureza": "parcela",
+          "vencimento": "2027-05-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 6,
+          "natureza": "parcela",
+          "vencimento": "2027-06-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 7,
+          "natureza": "parcela",
+          "vencimento": "2027-07-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 8,
+          "natureza": "parcela",
+          "vencimento": "2027-08-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 9,
+          "natureza": "parcela",
+          "vencimento": "2027-09-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 10,
+          "natureza": "parcela",
+          "vencimento": "2027-10-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 11,
+          "natureza": "parcela",
+          "vencimento": "2027-11-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 12,
+          "natureza": "parcela",
+          "vencimento": "2027-12-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 13,
+          "natureza": "parcela",
+          "vencimento": "2028-01-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 14,
+          "natureza": "parcela",
+          "vencimento": "2028-02-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 15,
+          "natureza": "parcela",
+          "vencimento": "2028-03-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 16,
+          "natureza": "parcela",
+          "vencimento": "2028-04-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 17,
+          "natureza": "parcela",
+          "vencimento": "2028-05-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 18,
+          "natureza": "parcela",
+          "vencimento": "2028-06-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 19,
+          "natureza": "parcela",
+          "vencimento": "2028-07-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 20,
+          "natureza": "parcela",
+          "vencimento": "2028-08-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 21,
+          "natureza": "parcela",
+          "vencimento": "2028-09-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 22,
+          "natureza": "parcela",
+          "vencimento": "2028-10-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 23,
+          "natureza": "parcela",
+          "vencimento": "2028-11-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        },
+        {
+          "numero": 24,
+          "natureza": "parcela",
+          "vencimento": "2028-12-10",
+          "valor": "5000.00",
+          "status": "PREVISTO_NAO_RECEBIDO"
+        }
+      ]
+    }
+  ]
+}

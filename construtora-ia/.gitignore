@@ -1,0 +1,9 @@
+node_modules/
+data/
+dist/
+.env
+*.log
+coverage/
+playwright-report/
+test-results/
+backups/
