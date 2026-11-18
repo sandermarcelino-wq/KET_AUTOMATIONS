@@ -18,9 +18,10 @@ if (!["127.0.0.1", "localhost", "::1"].includes(hostname))
   throw new Error(
     "Login simulado restrito a loopback; HOST deve ser 127.0.0.1, localhost ou ::1.",
   );
-const { app, close, runAllJobs } = await createApp({
-  dataDir: resolve(projectRoot, process.env.DATA_DIR ?? "data/construtora"),
-});
+const { app, close, runAllJobs, dispatchOutbox, integrations } =
+  await createApp({
+    dataDir: resolve(projectRoot, process.env.DATA_DIR ?? "data/construtora"),
+  });
 const staticRoot = resolve(projectRoot, "apps/admin/dist");
 if (existsSync(resolve(staticRoot, "index.html"))) {
   app.get("/assets/*", serveStatic({ root: staticRoot }));
@@ -52,6 +53,19 @@ const jobsTimer =
       )
     : undefined;
 jobsTimer?.unref();
+// Fila de saída do WhatsApp (somente em modo real): a cada minuto.
+if (integrations.live) {
+  setInterval(
+    () =>
+      void dispatchOutbox().catch((e) =>
+        console.error(
+          "[whatsapp] falha no envio:",
+          e instanceof Error ? e.name : "erro",
+        ),
+      ),
+    60_000,
+  ).unref();
+}
 let shuttingDown = false;
 async function shutdown() {
   if (shuttingDown) return;

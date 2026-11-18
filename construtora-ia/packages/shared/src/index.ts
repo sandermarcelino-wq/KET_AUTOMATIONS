@@ -84,15 +84,32 @@ export interface MaterialRequest {
   createdAt: string;
   invitationCount: number;
 }
+export type MessageStatus =
+  | "RECEIVED_SIMULATED"
+  | "SENT_SIMULATED"
+  | "RECEIVED"
+  | "QUEUED"
+  | "SENT"
+  | "DELIVERED"
+  | "READ"
+  | "FAILED"
+  | "DEAD_LETTER"
+  | "BLOCKED_WINDOW";
 export interface Message {
   id: string;
   requestId: string | null;
   direction: "inbound" | "outbound";
   recipient: string;
   text: string;
-  status: "RECEIVED_SIMULATED" | "SENT_SIMULATED";
+  status: MessageStatus;
   createdAt: string;
   providerMessageId: string | null;
+  /** Fila de envio (modo real) */
+  attempts?: number;
+  nextAttemptAt?: string | null;
+  error?: string | null;
+  templateName?: string | null;
+  attachmentId?: string | null;
 }
 export interface AuditEvent {
   id: string;
@@ -376,6 +393,8 @@ export interface TenantSettings {
   quoteDeadlineHours: number;
   autoCloseQuotingAtDeadline: boolean;
   includeOverdueInProjection: boolean;
+  /** Consulta semanal de promoções aos fornecedores com consentimento (desligada por padrão). */
+  promotionInquiryEnabled: boolean;
 }
 export type UnitStatus = "AVAILABLE" | "RESERVED" | "SOLD" | "CANCELLED";
 export interface PropertyUnit {
@@ -506,6 +525,92 @@ export interface CashFlowSummary {
   committedToPay: string;
   accounts: number;
 }
+export interface FiscalDocument {
+  id: string;
+  accessKey: string | null;
+  number: string | null;
+  issuedOn: string | null;
+  issuerCnpj: string | null;
+  issuerName: string | null;
+  total: string | null;
+  supplierId: string | null;
+  orderId: string | null;
+  status: "LINKED" | "UNLINKED" | "DIVERGENT";
+  issues: string[];
+  xmlAttachmentId: string | null;
+  pdfAttachmentId: string | null;
+  createdAt: string;
+}
+export interface BankStatementLine {
+  id: string;
+  accountId: string;
+  importId: string;
+  externalId: string | null;
+  date: string;
+  amount: string;
+  memo: string;
+  status: "UNMATCHED" | "SUGGESTED" | "REVIEW" | "MATCHED" | "IGNORED";
+  suggestion: {
+    kind: "OBLIGATION" | "INSTALLMENT";
+    id: string;
+    reason: string;
+  } | null;
+  candidates: { kind: "OBLIGATION" | "INSTALLMENT"; id: string }[];
+  matchId: string | null;
+}
+export interface BankStatementImport {
+  id: string;
+  accountId: string;
+  format: "OFX" | "CSV";
+  fileName: string;
+  lines: number;
+  duplicates: number;
+  suggested: number;
+  createdAt: string;
+}
+export interface AccountingPackage {
+  id: string;
+  period: string;
+  version: number;
+  status: "DRAFT" | "APPROVED" | "SENT" | "SEND_FAILED";
+  attachmentId: string;
+  fileCount: number;
+  missingDocuments: number;
+  approvedBy: string | null;
+  sentTo: string | null;
+  createdAt: string;
+}
+export interface AccountantContact {
+  id: string;
+  name: string;
+  email: string;
+}
+export interface Promotion {
+  id: string;
+  supplierId: string;
+  materialId: string;
+  normalPrice: string | null;
+  promoPrice: string;
+  validUntil: string | null;
+  remainingQuantity: string;
+  potentialSavings: string | null;
+  source: string;
+  createdAt: string;
+}
+export interface WhatsAppStatus {
+  mode: "SIMULATED" | "LIVE";
+  accounts: { id: string; phoneNumberId: string; displayPhone: string }[];
+  queued: number;
+  failed: number;
+  deadLetter: number;
+  blockedWindow: number;
+  credentialsConfigured: {
+    appSecret: boolean;
+    verifyToken: boolean;
+    accessToken: boolean;
+  };
+  ai: "mock" | "anthropic";
+}
 export interface State {
   tenant: Tenant;
   role: Role;
@@ -540,6 +645,13 @@ export interface State {
   bankAccounts: BankAccount[];
   cashEntries: CashEntry[];
   cashFlow: CashFlowSummary | null;
+  fiscalDocuments: FiscalDocument[];
+  statementImports: BankStatementImport[];
+  statementLines: BankStatementLine[];
+  accountingPackages: AccountingPackage[];
+  accountants: AccountantContact[];
+  promotions: Promotion[];
+  whatsapp: WhatsAppStatus | null;
   dryRun: true;
 }
 export interface ImportRow {

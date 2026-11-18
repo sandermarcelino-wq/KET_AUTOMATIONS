@@ -5,6 +5,7 @@ import { dueAlertOffset } from "../../../packages/domain/src/index.js";
 import type {
   AppNotification,
   Contact,
+  Material,
   MaterialRequest,
   PaymentObligation,
   PurchaseOrder,
@@ -12,6 +13,7 @@ import type {
   Supplier,
 } from "../../../packages/shared/src/index.js";
 import { audit, list, now, putMessage, type UserSession } from "./common.js";
+import { financeState } from "./finance.js";
 import { comparisonFor, saveOrder, saveRequest } from "./purchasing.js";
 import { loadSettings, notify, ownerOf } from "./services.js";
 
@@ -248,6 +250,40 @@ export async function runTenantJobs(
       text: `Parcela de comprador vencida: ${brl(new Decimal(inst.amountDue).minus(inst.received).toFixed(2))} com vencimento em ${inst.dueDate.split("-").reverse().join("/")} (contrato ${inst.contractId.slice(0, 8)}).`,
     });
     if (sent) summary.overdue++;
+  }
+
+  // 5c. consulta semanal de promoções (opt-in da empresa; só fornecedores ativos e com consentimento)
+  if (settings.promotionInquiryEnabled) {
+    const week = `${at.getUTCFullYear()}-W${Math.ceil((Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate()) - Date.UTC(at.getUTCFullYear(), 0, 1)) / 604800000)}`;
+    const materials = await list<Material>(tx, "materials", tenantId);
+    const remainingCats = new Set(
+      (await financeState(tx, { ...sys, role: "owner" })).budgetTracking
+        .filter((r) => Number(r.remainingQuantity) > 0)
+        .map((r) => materials.find((m) => m.id === r.materialId)?.category)
+        .filter(Boolean),
+    );
+    for (const sup of [...suppliers.values()].filter(
+      (x) =>
+        x.active && x.consent && x.categories.some((c) => remainingCats.has(c)),
+    )) {
+      const first = await notify(tx, tenantId, {
+        kind: "PROMO_INQUIRY",
+        dedupeKey: `promo-ask:${sup.id}:${week}`,
+        priority: "LOW",
+        text: `Consulta semanal de promoções enviada a ${sup.name}.`,
+      });
+      if (first)
+        await putMessage(tx, tenantId, {
+          id: randomUUID(),
+          requestId: null,
+          direction: "outbound",
+          recipient: sup.phone,
+          status: "SENT_SIMULATED",
+          createdAt: now(),
+          providerMessageId: null,
+          text: `[SIMULAÇÃO · NÃO ENVIADA] Olá! Há promoções esta semana em ${sup.categories.join(", ")}? Responda com material, preço e validade. Isto é apenas uma consulta, não um pedido.`,
+        });
+    }
   }
 
   // 6. resumo das notificações de baixa prioridade (evita excesso de mensagens)

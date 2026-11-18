@@ -32,6 +32,9 @@ import {
   Settings,
   Home,
   Landmark,
+  Scale,
+  FileText,
+  MessageSquare,
   Store,
   Upload,
   X,
@@ -62,6 +65,7 @@ import {
 } from "./ui";
 import { Prices, Purchasing } from "./purchasing";
 import { Cash, Sales } from "./sales";
+import { Accounting, Reconciliation, WhatsAppPage } from "./ops";
 import { Costs, Finance, Receiving, SettingsPage } from "./finance";
 import "./styles.css";
 
@@ -75,6 +79,9 @@ type Page =
   | "costs"
   | "sales"
   | "cash"
+  | "reconciliation"
+  | "accounting"
+  | "whatsapp"
   | "settings"
   | "simulator"
   | "budget"
@@ -95,6 +102,9 @@ const names: Record<Page, string> = {
   costs: "Custos da obra",
   sales: "Vendas",
   cash: "Fluxo de caixa",
+  reconciliation: "Conciliação",
+  accounting: "Contabilidade",
+  whatsapp: "WhatsApp",
   settings: "Configurações",
   simulator: "Simulador",
   budget: "Orçamento-base",
@@ -355,6 +365,9 @@ function App() {
           { id: "costs" as Page, icon: BarChart3 },
           { id: "sales" as Page, icon: Home },
           { id: "cash" as Page, icon: Landmark },
+          { id: "reconciliation" as Page, icon: Scale },
+          { id: "accounting" as Page, icon: FileText },
+          { id: "whatsapp" as Page, icon: MessageSquare },
         ]),
     { id: "simulator", icon: MessageCircle },
     ...(session.role === "site_requester"
@@ -506,6 +519,12 @@ function App() {
                     sales:
                       "Unidades, compradores, contratos e parcelas, cada contrato com sua regra.",
                     cash: "Saldo realizado e projeção em 30, 60 e 90 dias, sempre separando o confirmado.",
+                    reconciliation:
+                      "Extratos OFX/CSV cruzados com pagamentos e parcelas, sem presumir por valor igual.",
+                    accounting:
+                      "Notas fiscais, cobrança de documentos faltantes e pacote mensal para o contador.",
+                    whatsapp:
+                      "Central de mensagens: números, fila, falhas e modo de operação.",
                     settings:
                       "Regras configuráveis da empresa, sem alterar o código.",
                     simulator:
@@ -619,6 +638,19 @@ function App() {
               )}
               {page === "cash" && (
                 <Cash {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "reconciliation" && (
+                <Reconciliation
+                  {...{ state, session, worksiteId, mutate, busy }}
+                />
+              )}
+              {page === "accounting" && (
+                <Accounting {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "whatsapp" && (
+                <WhatsAppPage
+                  {...{ state, session, worksiteId, mutate, busy }}
+                />
               )}
               {page === "settings" && (
                 <SettingsPage

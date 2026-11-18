@@ -61,6 +61,17 @@ export const tableNames = new Set([
   "receipts",
   "bank_accounts",
   "cash_entries",
+  "whatsapp_accounts",
+  "fiscal_documents",
+  "bank_statement_imports",
+  "bank_statement_lines",
+  "bank_matches",
+  "accountant_contacts",
+  "accounting_packages",
+  "outbound_emails",
+  "promotions",
+  "missing_document_requests",
+  "whatsapp_inbound",
 ]);
 export class ApiError extends Error {
   constructor(

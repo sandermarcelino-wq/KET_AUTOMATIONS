@@ -1,5 +1,14 @@
 # Histórico de alterações
 
+## 0.5.0 — Etapa 4 (WhatsApp, IA, extratos, fiscal, contabilidade) — 2026-11-18
+
+- WhatsApp Cloud API: webhook assinado (HMAC), deduplicação, fila de saída com janela de 24 h/templates, retentativas e fila de falhas, status de entrega, mídia e áudio (STT), aprovação por código HMAC, consultas numéricas ao proprietário.
+- IA adaptável (Claude via API ou simulada) com saída validada por esquema e regras; sem IA o sistema pede esclarecimento.
+- Importação de extratos OFX/CSV, conciliação conservadora confirmada pelo proprietário.
+- NF-e XML/PDF sem duplicidade, divergências, fechamento mensal com cobrança só do que falta, pacote ZIP por empresa/obra/competência, envio ao contador após aprovação.
+- Promoções informativas, exportações CSV, consulta semanal opcional de promoções, telas Conciliação, Contabilidade e WhatsApp. Migração 006; ADR 0006.
+- Adaptadores reais verificados somente com respostas simuladas.
+
 ## 0.4.0 — Etapa 3 (vendas, recebíveis, fluxo de caixa) — 2026-11-18
 
 - Unidades, compradores (base legal LGPD), contratos versionados, entrada + parcelas, correção por regra do contrato (prévia e confirmação), ajuste manual, mudança de vencimento, renegociação e cancelamento.

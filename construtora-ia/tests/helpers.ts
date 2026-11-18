@@ -12,8 +12,8 @@ export type Json = Record<string, any>;
 export type Instance = Awaited<ReturnType<typeof createApp>>;
 
 /** Ambiente de teste: app em memória, sessões e atalhos de compra/pedido. */
-export async function setup() {
-  const instance = await createApp();
+export async function setup(options: Parameters<typeof createApp>[0] = {}) {
+  const instance = await createApp(options);
   const call = async (
     path: string,
     session?: Session,

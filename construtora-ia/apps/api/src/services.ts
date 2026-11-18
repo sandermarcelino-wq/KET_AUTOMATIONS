@@ -20,6 +20,7 @@ export function defaultSettings(): TenantSettings {
     quoteDeadlineHours: 4,
     autoCloseQuotingAtDeadline: true,
     includeOverdueInProjection: false,
+    promotionInquiryEnabled: false,
   };
 }
 export const settingsSchema = z
@@ -31,6 +32,7 @@ export const settingsSchema = z
     quoteDeadlineHours: z.number().int().min(1).max(168),
     autoCloseQuotingAtDeadline: z.boolean(),
     includeOverdueInProjection: z.boolean(),
+    promotionInquiryEnabled: z.boolean(),
   })
   .strict();
 export async function loadSettings(
@@ -53,6 +55,7 @@ export type Mime =
   | "image/png"
   | "image/webp"
   | "application/pdf"
+  | "application/zip"
   | "text/xml"
   | "text/plain";
 export function sniffMime(b: Buffer): Mime | null {
@@ -72,6 +75,14 @@ export function sniffMime(b: Buffer): Mime | null {
   )
     return "image/webp";
   if (b.subarray(0, 5).toString() === "%PDF-") return "application/pdf";
+  if (
+    b.length > 4 &&
+    b[0] === 0x50 &&
+    b[1] === 0x4b &&
+    b[2] === 0x03 &&
+    b[3] === 0x04
+  )
+    return "application/zip";
   const head = b.subarray(0, 512).toString("utf8").trimStart();
   if (head.startsWith("<?xml") || head.startsWith("<")) return "text/xml";
   if (!b.subarray(0, 4096).includes(0)) return "text/plain"; // CSV/OFX

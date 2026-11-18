@@ -13,15 +13,13 @@ import {
   isValidCnpj,
   previewBudgetCsv,
 } from "../../../packages/domain/src/index.js";
-import {
-  MockAI,
-  MockWhatsApp,
-} from "../../../packages/integrations/src/index.js";
+import { MockWhatsApp } from "../../../packages/integrations/src/index.js";
 import type {
   Budget,
   Contact,
   Material,
   MaterialRequest,
+  Session,
   State,
   Supplier,
   Tenant,
@@ -32,6 +30,15 @@ import type {
 import { purchasingState, registerPurchasing } from "./purchasing.js";
 import { financeState, registerFinance } from "./finance.js";
 import { registerSales, salesState } from "./sales.js";
+import { bankingState, registerBanking } from "./banking.js";
+import { fiscalState, registerFiscal } from "./fiscal.js";
+import {
+  dispatchOutbox,
+  registerWhatsApp,
+  whatsappState,
+  type WaDeps,
+} from "./whatsapp.js";
+import { integrationsFromEnv, type Integrations } from "./runtime.js";
 import { runTenantJobs } from "./jobs.js";
 import {
   ApiError,
@@ -76,7 +83,13 @@ const importSchema = z
   .strict();
 
 export async function createApp(
-  options: { dataDir?: string; seed?: boolean } = {},
+  options: {
+    dataDir?: string;
+    seed?: boolean;
+    integrations?: Partial<Omit<Integrations, "whatsapp">> & {
+      whatsapp?: Partial<Integrations["whatsapp"]>;
+    };
+  } = {},
 ) {
   if (
     (process.env.DRY_RUN && process.env.DRY_RUN !== "true") ||
@@ -87,10 +100,20 @@ export async function createApp(
       "Esta versão permite apenas DRY_RUN=true e autenticação de desenvolvimento; produção está bloqueada.",
     );
   }
+  if (process.env.WHATSAPP_LIVE === "true") {
+    throw new Error(
+      "WHATSAPP_LIVE=true exige autenticação real no painel (não disponível com o login de desenvolvimento).",
+    );
+  }
   const db = await createDatabase(options.dataDir);
   if (options.seed !== false) await seedDatabase(db);
   const sessions = new Map<string, UserSession>();
-  const ai = new MockAI();
+  const base = integrationsFromEnv();
+  const integ: Integrations = {
+    ...base,
+    ...options.integrations,
+    whatsapp: { ...base.whatsapp, ...options.integrations?.whatsapp },
+  };
   const whatsapp = new MockWhatsApp();
   const app = new Hono<Env>();
   const uploadRoute =
@@ -184,12 +207,57 @@ export async function createApp(
   ): Promise<T> {
     return db.transaction(async (tx) => {
       await tx.exec("SET LOCAL ROLE construtora_app");
-      await tx.query("SELECT set_config('app.tenant_id',$1,true)", [
-        s.tenant.id,
-      ]);
+      await enter(tx, s.tenant.id);
       return fn(tx);
     });
   }
+  /** Contexto da transação: empresa e modo de mensagens (real = fila de envio). */
+  async function enter(tx: Transaction, tenantId: string) {
+    await tx.query("SELECT set_config('app.tenant_id',$1,true)", [tenantId]);
+    await tx.query("SELECT set_config('app.live',$1,true)", [
+      integ.live ? "on" : "off",
+    ]);
+  }
+  /** Chamada interna às mesmas rotas (mesmas validações), com sessão efêmera de 60 s. */
+  async function internal(
+    tenantId: string,
+    actor: { role: Session["role"]; contactId: string; userName: string },
+    method: "GET" | "POST",
+    path: string,
+    body?: unknown,
+  ) {
+    const tenant = (
+      await db.query<Tenant>("SELECT id,name FROM tenants WHERE id=$1", [
+        tenantId,
+      ])
+    ).rows[0];
+    const token = randomUUID() + randomUUID();
+    sessions.set(token, {
+      token,
+      tenant,
+      role: actor.role,
+      userName: actor.userName,
+      contactId: actor.contactId,
+      expiresAt: Date.now() + 60_000,
+    });
+    try {
+      const res = await app.request(path, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      return {
+        status: res.status,
+        body: (await res.json()) as Record<string, unknown>,
+      };
+    } finally {
+      sessions.delete(token);
+    }
+  }
+  const waDeps: WaDeps = { db, scoped, internal, integrations: integ, enter };
   async function newBudget(
     tx: Transaction,
     s: UserSession,
@@ -265,10 +333,16 @@ export async function createApp(
       const purchasing = await purchasingState(tx, s);
       const finance = await financeState(tx, s);
       const sales = await salesState(tx, s);
+      const banking = await bankingState(tx, s);
+      const fiscal = await fiscalState(tx, s);
+      const whatsappInfo = await whatsappState(tx, s, integ);
       return {
         ...purchasing,
         ...finance,
         ...sales,
+        ...banking,
+        ...fiscal,
+        whatsapp: whatsappInfo,
         tenant: s.tenant,
         role: s.role,
         userName: s.userName,
@@ -701,7 +775,7 @@ export async function createApp(
             duplicate: true,
           };
         }
-        const extracted = await ai.extract(
+        const extracted = await integ.ai.extractRequest(
           body.text,
           await list<Material>(tx, "materials", s.tenant.id),
         );
@@ -927,6 +1001,9 @@ export async function createApp(
   registerPurchasing(app, { scoped });
   registerFinance(app, { scoped });
   registerSales(app, { scoped });
+  registerBanking(app, { scoped });
+  registerFiscal(app, { scoped, db, integrations: integ });
+  registerWhatsApp(app, waDeps);
   app.post("/api/jobs/run", async (c) => {
     const s = c.get("session");
     assertOwner(s);
@@ -941,7 +1018,7 @@ export async function createApp(
     for (const t of tenants)
       out[t.id] = await db.transaction(async (tx) => {
         await tx.exec("SET LOCAL ROLE construtora_app");
-        await tx.query("SELECT set_config('app.tenant_id',$1,true)", [t.id]);
+        await enter(tx, t.id);
         return runTenantJobs(tx, t.id, at);
       });
     return out;
@@ -1001,5 +1078,12 @@ export async function createApp(
       500,
     );
   });
-  return { app, db, runAllJobs, close: () => db.close() };
+  return {
+    app,
+    db,
+    runAllJobs,
+    dispatchOutbox: (at?: Date) => dispatchOutbox(waDeps, at),
+    integrations: integ,
+    close: () => db.close(),
+  };
 }

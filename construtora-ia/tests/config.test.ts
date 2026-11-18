@@ -5,7 +5,8 @@ it.each([
   ["DRY_RUN", "false"],
   ["NODE_ENV", "production"],
   ["DEV_AUTH_ENABLED", "false"],
+  ["WHATSAPP_LIVE", "true"],
 ])("recusa configuração não simulada %s=%s", async (key, value) => {
   vi.stubEnv(key, value);
-  await expect(createApp()).rejects.toThrow("produção está bloqueada");
+  await expect(createApp()).rejects.toThrow(/bloqueada|autenticação real/);
 });

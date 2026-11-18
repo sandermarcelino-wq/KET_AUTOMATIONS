@@ -1121,6 +1121,20 @@ export function SettingsPage({ state, session, mutate, busy }: Props) {
             <input
               type="checkbox"
               disabled={!owner}
+              checked={f.promotionInquiryEnabled}
+              onChange={(e) =>
+                setF({ ...f, promotionInquiryEnabled: e.target.checked })
+              }
+            />{" "}
+            Consultar fornecedores semanalmente sobre promoções (apenas os com
+            consentimento)
+          </span>
+        </label>
+        <label className="field full-width">
+          <span>
+            <input
+              type="checkbox"
+              disabled={!owner}
               checked={f.includeOverdueInProjection}
               onChange={(e) =>
                 setF({ ...f, includeOverdueInProjection: e.target.checked })
