@@ -31,6 +31,7 @@ import type {
 } from "../../../packages/shared/src/index.js";
 import { purchasingState, registerPurchasing } from "./purchasing.js";
 import { financeState, registerFinance } from "./finance.js";
+import { registerSales, salesState } from "./sales.js";
 import { runTenantJobs } from "./jobs.js";
 import {
   ApiError,
@@ -93,7 +94,7 @@ export async function createApp(
   const whatsapp = new MockWhatsApp();
   const app = new Hono<Env>();
   const uploadRoute =
-    /^\/api\/(deliveries|payment-obligations\/[^/]+\/proofs|fiscal-documents|bank-statements|contracts\/[^/]+\/documents)/;
+    /^\/api\/(deliveries|imports|payment-obligations\/[^/]+\/proofs|fiscal-documents|bank-statements|contracts\/[^/]+\/documents)/;
   app.use("/api/*", (c, next) =>
     bodyLimit({
       maxSize: uploadRoute.test(c.req.path) ? 8 * 1024 * 1024 : 2 * 1024 * 1024,
@@ -263,9 +264,11 @@ export async function createApp(
       const restricted = s.role === "site_requester";
       const purchasing = await purchasingState(tx, s);
       const finance = await financeState(tx, s);
+      const sales = await salesState(tx, s);
       return {
         ...purchasing,
         ...finance,
+        ...sales,
         tenant: s.tenant,
         role: s.role,
         userName: s.userName,
@@ -923,6 +926,7 @@ export async function createApp(
   });
   registerPurchasing(app, { scoped });
   registerFinance(app, { scoped });
+  registerSales(app, { scoped });
   app.post("/api/jobs/run", async (c) => {
     const s = c.get("session");
     assertOwner(s);

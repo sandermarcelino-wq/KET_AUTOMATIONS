@@ -1,5 +1,12 @@
 # Histórico de alterações
 
+## 0.4.0 — Etapa 3 (vendas, recebíveis, fluxo de caixa) — 2026-11-18
+
+- Unidades, compradores (base legal LGPD), contratos versionados, entrada + parcelas, correção por regra do contrato (prévia e confirmação), ajuste manual, mudança de vencimento, renegociação e cancelamento.
+- Recebimentos manuais idempotentes e estornáveis; parcela vencida nunca aparece como recebida; encargos só como estimativa.
+- Fluxo de caixa integrado realizado × previsto (30/60/90 dias), contas bancárias, lançamentos manuais (mão de obra, administrativo, tributos), filtro por obra.
+- Importador CSV legado (unidades e parcelas) com prévia; documentos do contrato; telas Vendas e Fluxo de caixa; migração 005; ADR 0005.
+
 ## 0.3.0 — Etapa 2 (recebimento, Pix, cheques, rotinas) — 2026-11-18
 
 - Recebimento documental com anexo privado, parcial/total/excesso/ilegível, sem duplicidade e sem relançar custo.

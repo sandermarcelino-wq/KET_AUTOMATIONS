@@ -30,6 +30,8 @@ import {
   Wallet,
   BarChart3,
   Settings,
+  Home,
+  Landmark,
   Store,
   Upload,
   X,
@@ -59,6 +61,7 @@ import {
   short,
 } from "./ui";
 import { Prices, Purchasing } from "./purchasing";
+import { Cash, Sales } from "./sales";
 import { Costs, Finance, Receiving, SettingsPage } from "./finance";
 import "./styles.css";
 
@@ -70,6 +73,8 @@ type Page =
   | "receiving"
   | "finance"
   | "costs"
+  | "sales"
+  | "cash"
   | "settings"
   | "simulator"
   | "budget"
@@ -88,6 +93,8 @@ const names: Record<Page, string> = {
   receiving: "Recebimentos",
   finance: "Financeiro",
   costs: "Custos da obra",
+  sales: "Vendas",
+  cash: "Fluxo de caixa",
   settings: "Configurações",
   simulator: "Simulador",
   budget: "Orçamento-base",
@@ -239,7 +246,7 @@ function Login({ onLogin }: { onLogin: (s: Session) => void }) {
             </span>
           </div>
         </div>
-        <p className="login-foot">ETAPA 1 · COMPRAS E APROVAÇÕES</p>
+        <p className="login-foot">MODO SIMULADO · DESENVOLVIMENTO</p>
       </section>
     </div>
   );
@@ -346,6 +353,8 @@ function App() {
       : [
           { id: "finance" as Page, icon: Wallet },
           { id: "costs" as Page, icon: BarChart3 },
+          { id: "sales" as Page, icon: Home },
+          { id: "cash" as Page, icon: Landmark },
         ]),
     { id: "simulator", icon: MessageCircle },
     ...(session.role === "site_requester"
@@ -410,7 +419,7 @@ function App() {
               com tranquilidade.
             </p>
             <span>
-              Etapa 1 <span className="env-dot" />
+              Modo simulado <span className="env-dot" />
             </span>
           </div>
           <div className="user-card">
@@ -494,6 +503,9 @@ function App() {
                       "Pix, cheques e vencimentos; comprovante informado não é pagamento confirmado.",
                     costs:
                       "Orçado, comprado, recebido e pago; o que ainda falta comprar.",
+                    sales:
+                      "Unidades, compradores, contratos e parcelas, cada contrato com sua regra.",
+                    cash: "Saldo realizado e projeção em 30, 60 e 90 dias, sempre separando o confirmado.",
                     settings:
                       "Regras configuráveis da empresa, sem alterar o código.",
                     simulator:
@@ -534,11 +546,11 @@ function App() {
           <div className="simulation-banner">
             <FlaskConical size={17} />
             <span>
-              <strong>Modo simulado ativo.</strong> Cotações, pedidos e
-              respostas de fornecedores são simulados. Nenhuma mensagem externa,
-              pagamento ou compra real é realizada.
+              <strong>Modo simulado ativo.</strong> Mensagens, pagamentos,
+              recebimentos e integrações são simulados; nenhuma ação real é
+              realizada.
             </span>
-            <Badge>ETAPA 1</Badge>
+            <Badge>DRY_RUN</Badge>
           </div>
           {error && (
             <div className="error-box" role="alert">
@@ -601,6 +613,12 @@ function App() {
               )}
               {page === "costs" && (
                 <Costs {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "sales" && (
+                <Sales {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "cash" && (
+                <Cash {...{ state, session, worksiteId, mutate, busy }} />
               )}
               {page === "settings" && (
                 <SettingsPage

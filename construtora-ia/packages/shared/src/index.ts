@@ -377,6 +377,135 @@ export interface TenantSettings {
   autoCloseQuotingAtDeadline: boolean;
   includeOverdueInProjection: boolean;
 }
+export type UnitStatus = "AVAILABLE" | "RESERVED" | "SOLD" | "CANCELLED";
+export interface PropertyUnit {
+  id: string;
+  worksiteId: string;
+  code: string;
+  description: string | null;
+  area: string | null;
+  listPrice: string;
+  status: UnitStatus;
+  createdAt: string;
+}
+export interface Buyer {
+  id: string;
+  name: string;
+  document: string;
+  phone: string | null;
+  email: string | null;
+  /** Base legal LGPD do tratamento (obrigatória). */
+  legalBasis: "EXECUCAO_CONTRATO" | "CONSENTIMENTO" | "OBRIGACAO_LEGAL";
+  createdAt: string;
+}
+export interface AdjustmentRule {
+  type: "NONE" | "FIXED_MONTHLY_PERCENT" | "MANUAL_INDEX";
+  monthlyPercent: string | null;
+  description: string | null;
+}
+export interface SalesContract {
+  id: string;
+  code: string;
+  unitId: string;
+  buyerId: string;
+  worksiteId: string;
+  saleDate: string;
+  salePrice: string;
+  entryAmount: string;
+  version: number;
+  status: "ACTIVE" | "CANCELLED";
+  adjustment: AdjustmentRule;
+  lateFeePercent: string | null;
+  lateInterestMonthlyPercent: string | null;
+  documents: { attachmentId: string; name: string; addedAt: string }[];
+  notes: string | null;
+  cancelledReason: string | null;
+  createdAt: string;
+}
+export type InstallmentStatus =
+  | "SCHEDULED"
+  | "DUE"
+  | "PARTIALLY_PAID"
+  | "PAID"
+  | "OVERDUE"
+  | "RENEGOTIATED"
+  | "CANCELLED";
+export interface ReceivableInstallment {
+  id: string;
+  contractId: string;
+  version: number;
+  number: number;
+  kind: "ENTRY" | "INSTALLMENT";
+  dueDate: string;
+  originalAmount: string;
+  amountDue: string;
+  received: string;
+  status: InstallmentStatus;
+  adjustments: {
+    at: string;
+    by: string;
+    from: string;
+    to: string;
+    reason: string;
+  }[];
+  dueDateChanges: {
+    at: string;
+    by: string;
+    from: string;
+    to: string;
+    reason: string;
+  }[];
+  /** Derivados na leitura */
+  remaining: string;
+  daysLate: number;
+  lateEstimate: string;
+}
+export interface Receipt {
+  id: string;
+  installmentId: string;
+  amount: string;
+  receivedOn: string;
+  method: string;
+  note: string | null;
+  clientRef: string;
+  recordedBy: string;
+  createdAt: string;
+}
+export interface BankAccount {
+  id: string;
+  name: string;
+  openingBalance: string;
+  openingDate: string;
+}
+export interface CashEntry {
+  id: string;
+  kind: "IN" | "OUT";
+  category: "LABOR" | "ADMIN" | "TAX" | "OTHER_OUT" | "OTHER_IN";
+  description: string;
+  amount: string;
+  date: string;
+  status: "PLANNED" | "PAID" | "CANCELLED";
+  paidOn: string | null;
+  worksiteId: string | null;
+  createdAt: string;
+}
+export interface CashFlowSummary {
+  today: string;
+  worksiteId: string | null;
+  realizedBalance: string;
+  expectedIn: Record<"30" | "60" | "90", string>;
+  expectedOut: Record<"30" | "60" | "90", string>;
+  projectedBalance: Record<"30" | "60" | "90", string>;
+  overdueReceivables: string;
+  overdueIncluded: boolean;
+  unconfirmedNote: string;
+  receivableThisMonth: string;
+  receivedThisMonth: string;
+  chequesNextMonth: string;
+  remainingCostToBuy: string;
+  committedToPay: string;
+  accounts: number;
+}
 export interface State {
   tenant: Tenant;
   role: Role;
@@ -403,6 +532,14 @@ export interface State {
   notifications: AppNotification[];
   budgetTracking: BudgetTrackingRow[];
   settings: TenantSettings;
+  units: PropertyUnit[];
+  buyers: Buyer[];
+  contracts: SalesContract[];
+  installments: ReceivableInstallment[];
+  receipts: Receipt[];
+  bankAccounts: BankAccount[];
+  cashEntries: CashEntry[];
+  cashFlow: CashFlowSummary | null;
   dryRun: true;
 }
 export interface ImportRow {

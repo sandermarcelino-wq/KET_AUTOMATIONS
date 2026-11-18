@@ -54,6 +54,13 @@ export const tableNames = new Set([
   "payment_obligations",
   "payment_proofs",
   "notifications",
+  "property_units",
+  "buyers",
+  "sales_contracts",
+  "receivable_installments",
+  "receipts",
+  "bank_accounts",
+  "cash_entries",
 ]);
 export class ApiError extends Error {
   constructor(

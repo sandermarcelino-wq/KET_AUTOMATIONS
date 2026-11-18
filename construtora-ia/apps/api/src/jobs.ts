@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Transaction } from "@electric-sql/pglite";
+import Decimal from "decimal.js";
 import { dueAlertOffset } from "../../../packages/domain/src/index.js";
 import type {
   AppNotification,
@@ -7,6 +8,7 @@ import type {
   MaterialRequest,
   PaymentObligation,
   PurchaseOrder,
+  ReceivableInstallment,
   Supplier,
 } from "../../../packages/shared/src/index.js";
 import { audit, list, now, putMessage, type UserSession } from "./common.js";
@@ -220,6 +222,32 @@ export async function runTenantJobs(
         requestId: r.id,
         text: `Prazo de cotação vencido sem proposta comparável (${cmp.responded} de ${cmp.invited} responderam). Decida: aguardar, esclarecer ou buscar outros fornecedores.`,
       });
+  }
+
+  // 5b. parcelas de compradores: vencida ≠ recebida; avisa uma vez por parcela
+  for (const inst of await list<ReceivableInstallment>(
+    tx,
+    "receivable_installments",
+    tenantId,
+  )) {
+    if (
+      ["PAID", "CANCELLED", "RENEGOTIATED"].includes(inst.status) ||
+      inst.dueDate >= day
+    )
+      continue;
+    if (new Decimal(inst.amountDue).lte(inst.received)) continue;
+    if (inst.status !== "OVERDUE")
+      await tx.query(
+        "UPDATE receivable_installments SET data=jsonb_set(data,'{status}','\"OVERDUE\"') WHERE tenant_id=$1 AND id=$2",
+        [tenantId, inst.id],
+      );
+    const sent = await notify(tx, tenantId, {
+      kind: "BUYER_INSTALLMENT_OVERDUE",
+      dedupeKey: `buyer-overdue:${inst.id}`,
+      priority: "HIGH",
+      text: `Parcela de comprador vencida: ${brl(new Decimal(inst.amountDue).minus(inst.received).toFixed(2))} com vencimento em ${inst.dueDate.split("-").reverse().join("/")} (contrato ${inst.contractId.slice(0, 8)}).`,
+    });
+    if (sent) summary.overdue++;
   }
 
   // 6. resumo das notificações de baixa prioridade (evita excesso de mensagens)
