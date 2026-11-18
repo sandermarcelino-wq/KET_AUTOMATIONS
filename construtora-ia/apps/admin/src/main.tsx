@@ -26,6 +26,10 @@ import {
   ShieldCheck,
   ShoppingCart,
   TrendingUp,
+  PackageCheck,
+  Wallet,
+  BarChart3,
+  Settings,
   Store,
   Upload,
   X,
@@ -55,6 +59,7 @@ import {
   short,
 } from "./ui";
 import { Prices, Purchasing } from "./purchasing";
+import { Costs, Finance, Receiving, SettingsPage } from "./finance";
 import "./styles.css";
 
 type Page =
@@ -62,6 +67,10 @@ type Page =
   | "requests"
   | "purchasing"
   | "prices"
+  | "receiving"
+  | "finance"
+  | "costs"
+  | "settings"
   | "simulator"
   | "budget"
   | "registry"
@@ -76,6 +85,10 @@ const names: Record<Page, string> = {
   requests: "Solicitações",
   purchasing: "Compras",
   prices: "Preços e desvios",
+  receiving: "Recebimentos",
+  finance: "Financeiro",
+  costs: "Custos da obra",
+  settings: "Configurações",
   simulator: "Simulador",
   budget: "Orçamento-base",
   registry: "Cadastros",
@@ -236,7 +249,12 @@ type ContentProps = {
   state: State;
   session: Session;
   worksiteId: string;
-  mutate: (path: string, data: unknown, message?: string) => Promise<unknown>;
+  mutate: (
+    path: string,
+    data: unknown,
+    message?: string,
+    method?: "POST" | "PUT" | "PATCH",
+  ) => Promise<unknown>;
   busy: boolean;
   go: (p: Page) => void;
   notify: (s: string) => void;
@@ -293,12 +311,13 @@ function App() {
     path: string,
     data: unknown,
     message = "Registrado com sucesso.",
+    method?: "POST" | "PUT" | "PATCH",
   ) {
     setBusy(true);
     setError("");
     setNotice("");
     try {
-      const result = await api(path, session!.token, data);
+      const result = await api(path, session!.token, data, method);
       await refresh();
       setNotice(message);
       return result;
@@ -319,11 +338,21 @@ function App() {
           { id: "purchasing" as Page, icon: ShoppingCart },
           { id: "prices" as Page, icon: TrendingUp },
         ]),
+    ...(session.role === "operator_readonly"
+      ? []
+      : [{ id: "receiving" as Page, icon: PackageCheck }]),
+    ...(session.role === "site_requester"
+      ? []
+      : [
+          { id: "finance" as Page, icon: Wallet },
+          { id: "costs" as Page, icon: BarChart3 },
+        ]),
     { id: "simulator", icon: MessageCircle },
     ...(session.role === "site_requester"
       ? []
       : [
           { id: "budget" as Page, icon: FileSpreadsheet },
+          { id: "settings" as Page, icon: Settings },
           { id: "registry" as Page, icon: Store },
           { id: "audit" as Page, icon: ShieldCheck },
         ]),
@@ -459,6 +488,14 @@ function App() {
                       "Compare propostas, prepare pedidos e decida cada compra.",
                     prices:
                       "Orçamento original, tetos autorizados e aumentos acumulados.",
+                    receiving:
+                      "Confira a entrega pela nota ou romaneio, sem duplicar custo.",
+                    finance:
+                      "Pix, cheques e vencimentos; comprovante informado não é pagamento confirmado.",
+                    costs:
+                      "Orçado, comprado, recebido e pago; o que ainda falta comprar.",
+                    settings:
+                      "Regras configuráveis da empresa, sem alterar o código.",
                     simulator:
                       "Experimente uma conversa, acompanhe cada registro.",
                     budget:
@@ -555,6 +592,20 @@ function App() {
               )}
               {page === "prices" && (
                 <Prices {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "receiving" && (
+                <Receiving {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "finance" && (
+                <Finance {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "costs" && (
+                <Costs {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "settings" && (
+                <SettingsPage
+                  {...{ state, session, worksiteId, mutate, busy }}
+                />
               )}
               {page === "simulator" && (
                 <Simulator

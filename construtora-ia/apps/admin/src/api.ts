@@ -17,9 +17,10 @@ export async function api<T>(
   path: string,
   token?: string,
   data?: unknown,
+  method?: "POST" | "PUT" | "PATCH",
 ): Promise<T> {
   const response = await fetch(`/api${path}`, {
-    method: data === undefined ? "GET" : "POST",
+    method: data === undefined ? "GET" : (method ?? "POST"),
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(data === undefined ? {} : { "Content-Type": "application/json" }),

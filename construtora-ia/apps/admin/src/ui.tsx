@@ -101,3 +101,21 @@ export function Modal({
     </dialog>
   );
 }
+
+export function readFileBase64(
+  file: File,
+): Promise<{ fileName: string; contentType: string; base64: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+    reader.onload = () => {
+      const url = String(reader.result);
+      resolve({
+        fileName: file.name,
+        contentType: file.type || "application/octet-stream",
+        base64: url.slice(url.indexOf(",") + 1),
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}

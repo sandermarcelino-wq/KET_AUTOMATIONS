@@ -23,6 +23,13 @@ export interface Supplier {
   leadDays: number;
   consent: boolean;
   active: boolean;
+  /** Campos opcionais do cadastro completo (seção 3 do pedido). */
+  cnpj?: string | null;
+  contactName?: string | null;
+  location?: string | null;
+  materialIds?: string[];
+  paymentMethods?: PaymentTerms[];
+  commercialTerms?: string | null;
 }
 export interface Material {
   id: string;
@@ -159,6 +166,8 @@ export type OrderStatus =
   | "WAITING_SUPPLIER_CONFIRMATION"
   | "SUPPLIER_UNCONFIRMED"
   | "CONFIRMED"
+  | "PARTIALLY_RECEIVED"
+  | "RECEIVED"
   | "REJECTED"
   | "CANCELLED"
   | "EXPIRED"
@@ -200,6 +209,7 @@ export interface PurchaseOrder {
   needsPriceApproval: boolean;
   urgency: OrderUrgency | null;
   expiresAt: string;
+  receivedQuantity?: string;
   history: { at: string; action: string; actor: string; note?: string }[];
   createdAt: string;
 }
@@ -252,6 +262,121 @@ export interface PriceControlRow {
   authorizedCap: string | null;
   effectiveCap: string | null;
 }
+export interface Attachment {
+  id: string;
+  kind: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  sha256: string;
+  createdAt: string;
+}
+export type DeliveryStatus =
+  "ACCEPTED" | "DIVERGENT" | "REJECTED" | "NEEDS_CLARIFICATION";
+export interface Delivery {
+  id: string;
+  orderId: string;
+  worksiteId: string;
+  documentNumber: string;
+  quantity: string;
+  attachmentId: string | null;
+  status: DeliveryStatus;
+  issues: string[];
+  receivedBy: string;
+  resolutionNote: string | null;
+  createdAt: string;
+}
+export type ObligationKind = "PIX" | "CHEQUE" | "BOLETO" | "OTHER";
+export type ObligationStatus =
+  | "SCHEDULED"
+  | "DUE"
+  | "REPORTED"
+  | "CONFIRMED"
+  | "RECONCILED"
+  | "OVERDUE"
+  | "CANCELLED";
+export interface PaymentObligation {
+  id: string;
+  orderId: string;
+  worksiteId: string;
+  supplierId: string;
+  kind: ObligationKind;
+  installmentNumber: number;
+  installmentCount: number;
+  amount: string;
+  dueDate: string;
+  status: ObligationStatus;
+  chequeNumber: string | null;
+  bank: string | null;
+  pixKeyId: string | null;
+  pixRequestedAt: string | null;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  note: string | null;
+  createdAt: string;
+}
+export interface PaymentProof {
+  id: string;
+  obligationId: string;
+  amount: string;
+  paidAt: string;
+  transactionId: string | null;
+  attachmentId: string | null;
+  payeeDocument: string | null;
+  issues: string[];
+  status: "REPORTED" | "DIVERGENT";
+  reportedBy: string;
+  createdAt: string;
+}
+export type PixKeyStatus =
+  "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED" | "REPLACED";
+export interface PixKey {
+  id: string;
+  supplierId: string;
+  keyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "RANDOM";
+  keyMasked: string;
+  holderName: string;
+  holderDocument: string;
+  status: PixKeyStatus;
+  source: "OWNER" | "SUPPLIER_MESSAGE";
+  verifiedBy: string | null;
+  createdAt: string;
+}
+export interface AppNotification {
+  id: string;
+  kind: string;
+  priority: "HIGH" | "LOW";
+  text: string;
+  status: "PENDING" | "SENT" | "DIGESTED";
+  createdAt: string;
+}
+export interface BudgetTrackingRow {
+  worksiteId: string;
+  materialId: string;
+  budgetQuantity: string;
+  budgetTotal: string;
+  committedQuantity: string;
+  committedValue: string;
+  receivedQuantity: string;
+  paidValue: string;
+  reportedValue: string;
+  toPayValue: string;
+  remainingQuantity: string;
+  remainingCostEstimate: string;
+  projectedTotal: string;
+  variance: string;
+  variancePct: string | null;
+  priceIncreased: boolean;
+}
+export interface TenantSettings {
+  minComparableQuotes: number;
+  approvalValidityHours: number;
+  chequeAlertDays: number[];
+  deviationAlertPct: string;
+  quoteDeadlineHours: number;
+  autoCloseQuotingAtDeadline: boolean;
+  includeOverdueInProjection: boolean;
+}
 export interface State {
   tenant: Tenant;
   role: Role;
@@ -271,6 +396,13 @@ export interface State {
   priceAuthorizations: PriceAuthorization[];
   deviations: Deviation[];
   priceControl: PriceControlRow[];
+  deliveries: Delivery[];
+  obligations: PaymentObligation[];
+  proofs: PaymentProof[];
+  pixKeys: PixKey[];
+  notifications: AppNotification[];
+  budgetTracking: BudgetTrackingRow[];
+  settings: TenantSettings;
   dryRun: true;
 }
 export interface ImportRow {

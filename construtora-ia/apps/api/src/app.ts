@@ -10,6 +10,7 @@ import {
 import {
   budgetItems,
   moneyTotal,
+  isValidCnpj,
   previewBudgetCsv,
 } from "../../../packages/domain/src/index.js";
 import {
@@ -29,6 +30,8 @@ import type {
   Message,
 } from "../../../packages/shared/src/index.js";
 import { purchasingState, registerPurchasing } from "./purchasing.js";
+import { financeState, registerFinance } from "./finance.js";
+import { runTenantJobs } from "./jobs.js";
 import {
   ApiError,
   assertOwner,
@@ -38,6 +41,7 @@ import {
   date,
   get,
   hash,
+  isEligible,
   isUrgent,
   list,
   now,
@@ -88,18 +92,20 @@ export async function createApp(
   const ai = new MockAI();
   const whatsapp = new MockWhatsApp();
   const app = new Hono<Env>();
-  app.use(
-    "/api/*",
+  const uploadRoute =
+    /^\/api\/(deliveries|payment-obligations\/[^/]+\/proofs|fiscal-documents|bank-statements|contracts\/[^/]+\/documents)/;
+  app.use("/api/*", (c, next) =>
     bodyLimit({
-      maxSize: 2 * 1024 * 1024,
+      maxSize: uploadRoute.test(c.req.path) ? 8 * 1024 * 1024 : 2 * 1024 * 1024,
       onError: (c) =>
         c.json(
           {
-            error: "Arquivo ou mensagem excede o limite de 2 MB da requisição.",
+            error:
+              "Arquivo ou mensagem excede o limite da requisição (2 MB; 8 MB para anexos).",
           },
           413,
         ),
-    }),
+    })(c, next),
   );
   app.use("/api/*", async (c, next) => {
     c.header("Cache-Control", "no-store");
@@ -256,8 +262,10 @@ export async function createApp(
       const ownIds = new Set(ownRequests.map((r) => r.id));
       const restricted = s.role === "site_requester";
       const purchasing = await purchasingState(tx, s);
+      const finance = await financeState(tx, s);
       return {
         ...purchasing,
+        ...finance,
         tenant: s.tenant,
         role: s.role,
         userName: s.userName,
@@ -308,25 +316,55 @@ export async function createApp(
       201,
     );
   });
+  const phoneSchema = z
+    .string()
+    .regex(
+      /^\+[1-9]\d{7,14}$/,
+      "Informe telefone E.164, por exemplo +5511999990000.",
+    );
+  const supplierSchema = z
+    .object({
+      name: text,
+      phone: phoneSchema,
+      categories: z.array(text).min(1).max(30),
+      leadDays: z.number().int().min(0).max(365),
+      consent: z.boolean(),
+      active: z.boolean(),
+      cnpj: z
+        .string()
+        .trim()
+        .refine((v) => v === "" || isValidCnpj(v), "CNPJ inválido.")
+        .transform((v) => (v ? v.replace(/\D/g, "") : null))
+        .optional(),
+      contactName: text.nullable().optional(),
+      location: text.nullable().optional(),
+      materialIds: z.array(uuid).max(500).optional(),
+      paymentMethods: z
+        .array(
+          z.enum([
+            "A_VISTA",
+            "PIX_ANTECIPADO",
+            "BOLETO_PRAZO",
+            "CHEQUE_PARCELADO",
+          ]),
+        )
+        .max(4)
+        .optional(),
+      commercialTerms: z.string().trim().max(1000).nullable().optional(),
+    })
+    .strict();
+  async function validateSupplierMaterials(
+    tx: Transaction,
+    tenantId: string,
+    ids?: string[],
+  ) {
+    for (const id of ids ?? [])
+      await get<Material>(tx, "materials", tenantId, id);
+  }
   app.post("/api/suppliers", async (c) => {
     const s = c.get("session");
     assertOwner(s);
-    const body = z
-      .object({
-        name: text,
-        phone: z
-          .string()
-          .regex(
-            /^\+[1-9]\d{7,14}$/,
-            "Informe telefone E.164, por exemplo +5511999990000.",
-          ),
-        categories: z.array(text).min(1).max(30),
-        leadDays: z.number().int().min(0).max(365),
-        consent: z.boolean(),
-        active: z.boolean(),
-      })
-      .strict()
-      .parse(await c.req.json());
+    const body = supplierSchema.parse(await c.req.json());
     const supplier: Supplier = {
       id: randomUUID(),
       ...body,
@@ -334,6 +372,7 @@ export async function createApp(
     };
     return c.json(
       await scoped(s, async (tx) => {
+        await validateSupplierMaterials(tx, s.tenant.id, body.materialIds);
         await tx.query(
           "INSERT INTO suppliers(id,tenant_id,data) VALUES($1,$2,$3)",
           [supplier.id, s.tenant.id, JSON.stringify(supplier)],
@@ -342,6 +381,87 @@ export async function createApp(
         return supplier;
       }),
       201,
+    );
+  });
+  app.patch("/api/suppliers/:id", async (c) => {
+    const s = c.get("session");
+    assertOwner(s);
+    const body = supplierSchema.partial().parse(await c.req.json());
+    return c.json(
+      await scoped(s, async (tx) => {
+        const current = await get<Supplier>(
+          tx,
+          "suppliers",
+          s.tenant.id,
+          c.req.param("id"),
+        );
+        await validateSupplierMaterials(tx, s.tenant.id, body.materialIds);
+        const next: Supplier = {
+          ...current,
+          ...body,
+          categories: body.categories
+            ? [...new Set(body.categories)]
+            : current.categories,
+        };
+        await tx.query(
+          "UPDATE suppliers SET data=$1 WHERE tenant_id=$2 AND id=$3",
+          [JSON.stringify(next), s.tenant.id, next.id],
+        );
+        await audit(tx, s, "SUPPLIER_UPDATED", next.id);
+        return next;
+      }),
+    );
+  });
+  app.patch("/api/materials/:id", async (c) => {
+    const s = c.get("session");
+    assertOwner(s);
+    const body = z
+      .object({ category: text, aliases: z.array(text).max(30) })
+      .partial()
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await scoped(s, async (tx) => {
+        const current = await get<Material>(
+          tx,
+          "materials",
+          s.tenant.id,
+          c.req.param("id"),
+        );
+        const next: Material = { ...current, ...body };
+        await tx.query(
+          "UPDATE materials SET data=$1 WHERE tenant_id=$2 AND id=$3",
+          [JSON.stringify(next), s.tenant.id, next.id],
+        );
+        await audit(tx, s, "MATERIAL_UPDATED", next.id);
+        return next;
+      }),
+    );
+  });
+  app.patch("/api/worksites/:id", async (c) => {
+    const s = c.get("session");
+    assertOwner(s);
+    const body = z
+      .object({ name: text, address: text, legalEntityName: text })
+      .partial()
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await scoped(s, async (tx) => {
+        const current = await get<Worksite>(
+          tx,
+          "worksites",
+          s.tenant.id,
+          c.req.param("id"),
+        );
+        const next: Worksite = { ...current, ...body };
+        await tx.query(
+          "UPDATE worksites SET data=$1 WHERE tenant_id=$2 AND id=$3",
+          [JSON.stringify(next), s.tenant.id, next.id],
+        );
+        await audit(tx, s, "WORKSITE_UPDATED", next.id);
+        return next;
+      }),
     );
   });
   app.post("/api/materials", async (c) => {
@@ -736,10 +856,7 @@ export async function createApp(
         const worksite = await assertWorksite(tx, s, request.worksiteId);
         const suppliers = (
           await list<Supplier>(tx, "suppliers", s.tenant.id)
-        ).filter(
-          (x) =>
-            x.active && x.consent && x.categories.includes(material.category),
-        );
+        ).filter((x) => isEligible(x, material));
         if (!suppliers.length)
           throw new ApiError(
             409,
@@ -805,6 +922,26 @@ export async function createApp(
     );
   });
   registerPurchasing(app, { scoped });
+  registerFinance(app, { scoped });
+  app.post("/api/jobs/run", async (c) => {
+    const s = c.get("session");
+    assertOwner(s);
+    return c.json(await scoped(s, (tx) => runTenantJobs(tx, s.tenant.id)));
+  });
+  /** Executa as rotinas de todas as empresas (usado pelo agendador do servidor). */
+  async function runAllJobs(at = new Date()) {
+    const tenants = (
+      await db.query<{ id: string }>("SELECT id FROM tenants ORDER BY id")
+    ).rows;
+    const out: Record<string, unknown> = {};
+    for (const t of tenants)
+      out[t.id] = await db.transaction(async (tx) => {
+        await tx.exec("SET LOCAL ROLE construtora_app");
+        await tx.query("SELECT set_config('app.tenant_id',$1,true)", [t.id]);
+        return runTenantJobs(tx, t.id, at);
+      });
+    return out;
+  }
   app.notFound((c) =>
     c.json(
       {
@@ -846,7 +983,12 @@ export async function createApp(
         400,
       );
     // Nunca devolver SQL ou conteúdo privado em erro HTTP.
-    console.error("[api] Falha interna:", error.name, code ?? "unknown");
+    console.error(
+      "[api] Falha interna:",
+      error.name,
+      code ?? "unknown",
+      process.env.DEBUG_API === "true" ? error.stack : "",
+    );
     return c.json(
       {
         error:
@@ -855,5 +997,5 @@ export async function createApp(
       500,
     );
   });
-  return { app, db, close: () => db.close() };
+  return { app, db, runAllJobs, close: () => db.close() };
 }

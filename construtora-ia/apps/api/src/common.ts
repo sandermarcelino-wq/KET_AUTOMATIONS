@@ -50,6 +50,10 @@ export const tableNames = new Set([
   "purchase_orders",
   "purchase_approvals",
   "quote_invitations",
+  "deliveries",
+  "payment_obligations",
+  "payment_proofs",
+  "notifications",
 ]);
 export class ApiError extends Error {
   constructor(
@@ -177,6 +181,13 @@ export async function requestFor(db: Executor, s: UserSession, id: string) {
     throw new ApiError(404, "Solicitação não encontrada.");
   return request;
 }
+/** Fornecedor ativo, com consentimento, e que atende o material (lista específica, se houver, senão categoria). */
+export function isEligible(x: Supplier, material: Material): boolean {
+  if (!x.active || !x.consent) return false;
+  return x.materialIds?.length
+    ? x.materialIds.includes(material.id)
+    : x.categories.includes(material.category);
+}
 export async function isUrgent(
   db: Executor,
   tenantId: string,
@@ -186,7 +197,7 @@ export async function isUrgent(
   if (!materialId || !requiredDate) return false;
   const material = await get<Material>(db, "materials", tenantId, materialId);
   const suppliers = (await list<Supplier>(db, "suppliers", tenantId)).filter(
-    (x) => x.active && x.consent && x.categories.includes(material.category),
+    (x) => isEligible(x, material),
   );
   if (!suppliers.length) return false;
   // Lead times express civil days, not UTC instants or guaranteed delivery times.

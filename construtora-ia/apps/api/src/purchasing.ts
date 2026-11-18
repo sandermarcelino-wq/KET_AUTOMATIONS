@@ -53,6 +53,7 @@ import {
   type Env,
   type UserSession,
 } from "./common.js";
+import { loadSettings } from "./services.js";
 
 const paymentTerms = z.enum([
   "A_VISTA",
@@ -61,7 +62,6 @@ const paymentTerms = z.enum([
   "CHEQUE_PARCELADO",
 ]);
 const leadDays = z.number().int().min(0).max(365);
-const APPROVAL_VALID_HOURS = 48;
 const ACTIVE_ORDER = new Set([
   "PENDING_OWNER_APPROVAL",
   "APPROVED",
@@ -69,10 +69,6 @@ const ACTIVE_ORDER = new Set([
   "SUPPLIER_UNCONFIRMED",
   "CONFIRMED",
 ]);
-export function minComparable(): number {
-  const value = Number(process.env.MIN_COMPARABLE_QUOTES ?? 2);
-  return Number.isInteger(value) && value >= 1 && value <= 10 ? value : 2;
-}
 const label = (n: number) => String(n).padStart(4, "0");
 const brl = (v: string) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
@@ -81,7 +77,7 @@ const brl = (v: string) =>
 
 // ------------------------------------------------------------------ leituras
 /** Preço-base: preço original da MENOR versão congelada que contém o material. Versões posteriores não o reescrevem. */
-async function baselineOf(
+export async function baselineOf(
   tx: Transaction,
   tenantId: string,
   worksiteId: string,
@@ -137,7 +133,7 @@ async function notifyOwner(
     providerMessageId: null,
   });
 }
-async function comparisonFor(
+export async function comparisonFor(
   tx: Transaction,
   tenantId: string,
   request: MaterialRequest,
@@ -181,11 +177,11 @@ async function comparisonFor(
     ),
     authorizedCapFor: (terms) => caps.get(terms) ?? null,
     quotes,
-    minComparable: minComparable(),
+    minComparable: (await loadSettings(tx, tenantId)).minComparableQuotes,
     urgentRequest: request.urgent,
   });
 }
-async function orderFor(tx: Transaction, s: UserSession, id: string) {
+export async function orderFor(tx: Transaction, s: UserSession, id: string) {
   const order = await get<PurchaseOrder>(
     tx,
     "purchase_orders",
@@ -195,7 +191,7 @@ async function orderFor(tx: Transaction, s: UserSession, id: string) {
   await assertWorksite(tx, s, order.worksiteId);
   return order;
 }
-async function saveOrder(
+export async function saveOrder(
   tx: Transaction,
   tenantId: string,
   order: PurchaseOrder,
@@ -205,7 +201,7 @@ async function saveOrder(
     [JSON.stringify(order), tenantId, order.id],
   );
 }
-async function saveRequest(
+export async function saveRequest(
   tx: Transaction,
   tenantId: string,
   request: MaterialRequest,
@@ -816,7 +812,9 @@ export function registerPurchasing(app: Hono<Env>, { scoped }: Deps) {
               }
             : null,
           expiresAt: new Date(
-            Date.now() + APPROVAL_VALID_HOURS * 3600000,
+            Date.now() +
+              (await loadSettings(tx, tenantId)).approvalValidityHours *
+                3600000,
           ).toISOString(),
           history: [{ at: now(), action: "PREPARED", actor: s.userName }],
           createdAt: now(),
@@ -1408,7 +1406,9 @@ export function registerPurchasing(app: Hono<Env>, { scoped }: Deps) {
           needsPriceApproval: priceNeeded,
           status: "PENDING_OWNER_APPROVAL",
           expiresAt: new Date(
-            Date.now() + APPROVAL_VALID_HOURS * 3600000,
+            Date.now() +
+              (await loadSettings(tx, tenantId)).approvalValidityHours *
+                3600000,
           ).toISOString(),
           history: [
             ...order.history,

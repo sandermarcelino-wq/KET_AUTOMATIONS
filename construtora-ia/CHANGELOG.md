@@ -1,5 +1,13 @@
 # Histórico de alterações
 
+## 0.3.0 — Etapa 2 (recebimento, Pix, cheques, rotinas) — 2026-11-18
+
+- Recebimento documental com anexo privado, parcial/total/excesso/ilegível, sem duplicidade e sem relançar custo.
+- Cronograma de pagamentos (Pix, cheques, boleto) com soma igual ao total do pedido; chaves Pix com verificação do proprietário; solicitação de Pix em duas mensagens; comprovantes informados ≠ confirmados; confirmação manual auditada.
+- Rotinas agendadas idempotentes (vencimentos D-7/D-2/D0, vencidas, entregas atrasadas, cotação no prazo, aprovações expiradas, resumo de avisos) e configurações por empresa.
+- Acompanhamento de custos (orçado × comprado × recebido × pago), cadastro completo de fornecedor, telas Recebimentos, Financeiro, Custos da obra e Configurações.
+- Migração 004; ADR 0004.
+
 ## 0.2.0 — Software, Etapa 1 (compras e aprovações) — 2026-11-18
 
 - Propostas de fornecedores (simuladas) com versões, comparação determinística (preço + frete + custos, prazo, pagamento, disponibilidade, especificação) e tratamento de proposta incomparável, indisponível e fornecedor sem resposta.

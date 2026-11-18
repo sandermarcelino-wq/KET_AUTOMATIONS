@@ -48,6 +48,8 @@ const ORDER_STATUS: Record<OrderStatus, [string, string]> = {
   ],
   SUPPLIER_UNCONFIRMED: ["Fornecedor sem confirmar", "red"],
   CONFIRMED: ["Confirmado pelo fornecedor", "green"],
+  PARTIALLY_RECEIVED: ["Recebido parcialmente", "amber"],
+  RECEIVED: ["Recebido (documental)", "green"],
   REJECTED: ["Rejeitado", "neutral"],
   CANCELLED: ["Cancelado", "neutral"],
   EXPIRED: ["Aprovação expirada", "neutral"],
