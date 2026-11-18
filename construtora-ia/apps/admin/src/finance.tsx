@@ -8,6 +8,7 @@ import type {
   TenantSettings,
 } from "../../../packages/shared/src/index";
 import { api } from "./api";
+import { PlanPanel, UsersPanel } from "./auth";
 import {
   Badge,
   Empty,
@@ -1023,139 +1024,146 @@ export function Costs({ state, worksiteId }: Props) {
 
 // ------------------------------------------------------------ Configurações
 export function SettingsPage({ state, session, mutate, busy }: Props) {
+  const panels = { state, session, mutate, busy };
   const [f, setF] = useState<TenantSettings>(state.settings);
   const [days, setDays] = useState(state.settings.chequeAlertDays.join(", "));
   const owner = session.role === "owner";
   return (
-    <section className="panel">
-      <div className="panel-header">
-        <h2>Regras da empresa</h2>
-      </div>
-      <form
-        className="panel-body form-grid"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void mutate(
-            "/settings",
-            {
-              ...f,
-              chequeAlertDays: days
-                .split(",")
-                .map((d) => Number(d.trim()))
-                .filter((n) => Number.isInteger(n)),
-            },
-            "Configurações salvas.",
-            "PUT",
-          );
-        }}
-      >
-        <Field label="Propostas comparáveis mínimas">
-          <input
-            type="number"
-            min="1"
-            max="10"
-            disabled={!owner}
-            value={f.minComparableQuotes}
-            onChange={(e) =>
-              setF({ ...f, minComparableQuotes: Number(e.target.value) })
-            }
-          />
-        </Field>
-        <Field label="Validade da aprovação (horas)">
-          <input
-            type="number"
-            min="1"
-            max="720"
-            disabled={!owner}
-            value={f.approvalValidityHours}
-            onChange={(e) =>
-              setF({ ...f, approvalValidityHours: Number(e.target.value) })
-            }
-          />
-        </Field>
-        <Field label="Prazo de resposta da cotação (horas)">
-          <input
-            type="number"
-            min="1"
-            max="168"
-            disabled={!owner}
-            value={f.quoteDeadlineHours}
-            onChange={(e) =>
-              setF({ ...f, quoteDeadlineHours: Number(e.target.value) })
-            }
-          />
-        </Field>
-        <Field label="Alerta de desvio de custo (%)">
-          <input
-            disabled={!owner}
-            value={f.deviationAlertPct}
-            onChange={(e) => setF({ ...f, deviationAlertPct: e.target.value })}
-          />
-        </Field>
-        <Field
-          label="Avisos de vencimento (dias antes, separados por vírgula)"
-          wide
+    <>
+      <section className="panel">
+        <div className="panel-header">
+          <h2>Regras da empresa</h2>
+        </div>
+        <form
+          className="panel-body form-grid"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void mutate(
+              "/settings",
+              {
+                ...f,
+                chequeAlertDays: days
+                  .split(",")
+                  .map((d) => Number(d.trim()))
+                  .filter((n) => Number.isInteger(n)),
+              },
+              "Configurações salvas.",
+              "PUT",
+            );
+          }}
         >
-          <input
-            disabled={!owner}
-            value={days}
-            onChange={(e) => setDays(e.target.value)}
-          />
-        </Field>
-        <label className="field full-width">
-          <span>
+          <Field label="Propostas comparáveis mínimas">
             <input
-              type="checkbox"
+              type="number"
+              min="1"
+              max="10"
               disabled={!owner}
-              checked={f.autoCloseQuotingAtDeadline}
+              value={f.minComparableQuotes}
               onChange={(e) =>
-                setF({ ...f, autoCloseQuotingAtDeadline: e.target.checked })
+                setF({ ...f, minComparableQuotes: Number(e.target.value) })
               }
-            />{" "}
-            Encerrar a cotação automaticamente no prazo, usando as propostas
-            disponíveis (nunca compra)
-          </span>
-        </label>
-        <label className="field full-width">
-          <span>
+            />
+          </Field>
+          <Field label="Validade da aprovação (horas)">
             <input
-              type="checkbox"
+              type="number"
+              min="1"
+              max="720"
               disabled={!owner}
-              checked={f.promotionInquiryEnabled}
+              value={f.approvalValidityHours}
               onChange={(e) =>
-                setF({ ...f, promotionInquiryEnabled: e.target.checked })
+                setF({ ...f, approvalValidityHours: Number(e.target.value) })
               }
-            />{" "}
-            Consultar fornecedores semanalmente sobre promoções (apenas os com
-            consentimento)
-          </span>
-        </label>
-        <label className="field full-width">
-          <span>
+            />
+          </Field>
+          <Field label="Prazo de resposta da cotação (horas)">
             <input
-              type="checkbox"
+              type="number"
+              min="1"
+              max="168"
               disabled={!owner}
-              checked={f.includeOverdueInProjection}
+              value={f.quoteDeadlineHours}
               onChange={(e) =>
-                setF({ ...f, includeOverdueInProjection: e.target.checked })
+                setF({ ...f, quoteDeadlineHours: Number(e.target.value) })
               }
-            />{" "}
-            Incluir parcelas de compradores vencidas na projeção de caixa
-            (padrão: não)
-          </span>
-        </label>
-        {owner ? (
-          <div className="form-actions full-width">
-            <button className="btn primary" disabled={busy}>
-              Salvar
-            </button>
-          </div>
-        ) : (
-          <p className="muted full-width">
-            Somente o proprietário altera as regras.
-          </p>
-        )}
-      </form>
-    </section>
+            />
+          </Field>
+          <Field label="Alerta de desvio de custo (%)">
+            <input
+              disabled={!owner}
+              value={f.deviationAlertPct}
+              onChange={(e) =>
+                setF({ ...f, deviationAlertPct: e.target.value })
+              }
+            />
+          </Field>
+          <Field
+            label="Avisos de vencimento (dias antes, separados por vírgula)"
+            wide
+          >
+            <input
+              disabled={!owner}
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+            />
+          </Field>
+          <label className="field full-width">
+            <span>
+              <input
+                type="checkbox"
+                disabled={!owner}
+                checked={f.autoCloseQuotingAtDeadline}
+                onChange={(e) =>
+                  setF({ ...f, autoCloseQuotingAtDeadline: e.target.checked })
+                }
+              />{" "}
+              Encerrar a cotação automaticamente no prazo, usando as propostas
+              disponíveis (nunca compra)
+            </span>
+          </label>
+          <label className="field full-width">
+            <span>
+              <input
+                type="checkbox"
+                disabled={!owner}
+                checked={f.promotionInquiryEnabled}
+                onChange={(e) =>
+                  setF({ ...f, promotionInquiryEnabled: e.target.checked })
+                }
+              />{" "}
+              Consultar fornecedores semanalmente sobre promoções (apenas os com
+              consentimento)
+            </span>
+          </label>
+          <label className="field full-width">
+            <span>
+              <input
+                type="checkbox"
+                disabled={!owner}
+                checked={f.includeOverdueInProjection}
+                onChange={(e) =>
+                  setF({ ...f, includeOverdueInProjection: e.target.checked })
+                }
+              />{" "}
+              Incluir parcelas de compradores vencidas na projeção de caixa
+              (padrão: não)
+            </span>
+          </label>
+          {owner ? (
+            <div className="form-actions full-width">
+              <button className="btn primary" disabled={busy}>
+                Salvar
+              </button>
+            </div>
+          ) : (
+            <p className="muted full-width">
+              Somente o proprietário altera as regras.
+            </p>
+          )}
+        </form>
+      </section>
+      <PlanPanel state={state} />
+      <UsersPanel {...panels} />
+    </>
   );
 }

@@ -4,6 +4,7 @@ import type { Transaction } from "@electric-sql/pglite";
 import type {
   Attachment,
   Contact,
+  PlanInfo,
   TenantSettings,
 } from "../../../packages/shared/src/index.js";
 import { ApiError, now, putMessage, type Executor } from "./common.js";
@@ -129,6 +130,7 @@ export async function storeAttachment(
   );
   if (prior.rows[0])
     return { attachment: prior.rows[0].data, existed: true, bytes };
+  await assertWithinPlan(tx, tenantId, "storageMb", bytes.length / 1048576);
   const attachment: Attachment = {
     id: randomUUID(),
     kind,
@@ -210,4 +212,95 @@ export async function notify(
       });
   }
   return true;
+}
+
+// ----------------------------------------------------------------- plano e uso
+const NO_LIMITS = {
+  worksites: null,
+  users: null,
+  storageMb: null,
+  messagesPerMonth: null,
+  aiCallsPerMonth: null,
+};
+/** Plano da empresa. Sem registro (uso interno), nada é limitado: limites comerciais são configuráveis, não inventados. */
+export async function planInfo(
+  db: Executor,
+  tenantId: string,
+): Promise<PlanInfo> {
+  const plan = (
+    await db.query<{ data: { plan: string; limits: PlanInfo["limits"] } }>(
+      "SELECT data FROM tenant_plans WHERE tenant_id=$1",
+      [tenantId],
+    )
+  ).rows[0]?.data;
+  const month = new Date().toISOString().slice(0, 7);
+  const one = async (sql: string, params: unknown[]) =>
+    Number(
+      (await db.query<{ n: string | number }>(sql, params)).rows[0]?.n ?? 0,
+    );
+  const [worksites, users, bytes, messages, ai] = await Promise.all([
+    one("SELECT count(*)::int AS n FROM worksites WHERE tenant_id=$1", [
+      tenantId,
+    ]),
+    one(
+      "SELECT count(*)::int AS n FROM users WHERE tenant_id=$1 AND status='ACTIVE'",
+      [tenantId],
+    ),
+    one(
+      "SELECT coalesce(sum(size),0)::text AS n FROM attachments WHERE tenant_id=$1",
+      [tenantId],
+    ),
+    one(
+      "SELECT coalesce(sum(qty),0)::text AS n FROM usage_counters WHERE tenant_id=$1 AND month=$2 AND kind='messages_out'",
+      [tenantId, month],
+    ),
+    one(
+      "SELECT coalesce(sum(qty),0)::text AS n FROM usage_counters WHERE tenant_id=$1 AND month=$2 AND kind='ai_calls'",
+      [tenantId, month],
+    ),
+  ]);
+  return {
+    plan: plan?.plan ?? "INTERNAL",
+    limits: { ...NO_LIMITS, ...(plan?.limits ?? {}) },
+    usage: {
+      worksites,
+      users,
+      storageMb: Math.round((bytes / 1048576) * 100) / 100,
+      messagesThisMonth: messages,
+      aiCallsThisMonth: ai,
+    },
+  };
+}
+export async function bumpUsage(
+  db: Executor,
+  tenantId: string,
+  kind: "ai_calls" | "messages_out",
+  n = 1,
+) {
+  await db.query(
+    "INSERT INTO usage_counters(tenant_id,month,kind,qty) VALUES($1,$2,$3,$4) ON CONFLICT (tenant_id,month,kind) DO UPDATE SET qty = usage_counters.qty + EXCLUDED.qty",
+    [tenantId, new Date().toISOString().slice(0, 7), kind, n],
+  );
+}
+export async function assertWithinPlan(
+  db: Executor,
+  tenantId: string,
+  kind: "worksites" | "storageMb",
+  extraMb = 0,
+) {
+  const info = await planInfo(db, tenantId);
+  const limit = info.limits[kind];
+  if (limit === null) return;
+  const used =
+    kind === "worksites"
+      ? info.usage.worksites
+      : info.usage.storageMb + extraMb;
+  if (used >= limit || (kind === "worksites" && used + 0 >= limit))
+    throw new ApiError(
+      409,
+      kind === "worksites"
+        ? `Limite de obras do plano atingido (${limit}).`
+        : `Limite de armazenamento do plano atingido (${limit} MB).`,
+      "PLAN_LIMIT",
+    );
 }

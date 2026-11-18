@@ -66,6 +66,7 @@ import {
 import { Prices, Purchasing } from "./purchasing";
 import { Cash, Sales } from "./sales";
 import { Accounting, Reconciliation, WhatsAppPage } from "./ops";
+import { ForcePasswordChange, PasswordAuth } from "./auth";
 import { Costs, Finance, Receiving, SettingsPage } from "./finance";
 import "./styles.css";
 
@@ -135,7 +136,7 @@ function Logo() {
     </div>
   );
 }
-function Login({ onLogin }: { onLogin: (s: Session) => void }) {
+function DevLogin({ onLogin }: { onLogin: (s: Session) => void }) {
   const [tenants, setTenants] = useState<Tenant[]>([]),
     [tenantId, setTenant] = useState(""),
     [role, setRole] = useState<Role>("owner"),
@@ -262,6 +263,31 @@ function Login({ onLogin }: { onLogin: (s: Session) => void }) {
   );
 }
 
+/** Escolhe o acesso conforme o servidor: senha (real) ou perfis de demonstração (desenvolvimento). */
+function Login({ onLogin }: { onLogin: (s: Session) => void }) {
+  const [mode, setMode] = useState<"loading" | "dev" | "password">("loading");
+  const [signup, setSignup] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    api<{ authentication: string; signupEnabled: boolean }>("/health")
+      .then((h) => {
+        setMode(h.authentication === "password" ? "password" : "dev");
+        setSignup(h.signupEnabled);
+      })
+      .catch((e) => setError(errorText(e)));
+  }, []);
+  if (mode === "dev")
+    return <DevLogin onLogin={(s) => onLogin({ ...s, dev: true })} />;
+  if (mode === "password")
+    return <PasswordAuth onLogin={onLogin} signup={signup} />;
+  return (
+    <div className="empty-state">
+      <RefreshCw className="spinner" />
+      <h3>{error || "Conectando…"}</h3>
+    </div>
+  );
+}
+
 type ContentProps = {
   state: State;
   session: Session;
@@ -313,6 +339,8 @@ function App() {
     setPage("overview");
   }
   function logout() {
+    if (session)
+      void api("/auth/logout", session.token, {}).catch(() => undefined);
     saveSession(null);
     setSession(null);
     setState(null);
@@ -346,6 +374,18 @@ function App() {
     }
   }
   if (!session) return <Login onLogin={login} />;
+  if (session.mustChangePassword)
+    return (
+      <ForcePasswordChange
+        session={session}
+        onLogout={logout}
+        onDone={() => {
+          const next = { ...session, mustChangePassword: false };
+          saveSession(next);
+          setSession(next);
+        }}
+      />
+    );
   const nav: { id: Page; icon: LucideIcon }[] = [
     { id: "overview", icon: LayoutDashboard },
     { id: "requests", icon: ClipboardList },
@@ -423,18 +463,20 @@ function App() {
           </nav>
         </div>
         <div className="sidebar-bottom">
-          <div className="environment-card">
-            <FlaskConical size={20} />
-            <strong>Espaço de simulação</strong>
-            <p>
-              Teste o fluxo da obra
-              <br />
-              com tranquilidade.
-            </p>
-            <span>
-              Modo simulado <span className="env-dot" />
-            </span>
-          </div>
+          {session.dev && (
+            <div className="environment-card">
+              <FlaskConical size={20} />
+              <strong>Espaço de simulação</strong>
+              <p>
+                Teste o fluxo da obra
+                <br />
+                com tranquilidade.
+              </p>
+              <span>
+                Modo simulado <span className="env-dot" />
+              </span>
+            </div>
+          )}
           <div className="user-card">
             <div className="avatar">
               {session.userName.slice(0, 2).toUpperCase()}
@@ -471,7 +513,8 @@ function App() {
           </div>
           <div className="topbar-right">
             <span className="badge neutral">
-              <span className="env-dot" /> Dados fictícios
+              <span className="env-dot" />{" "}
+              {session.dev ? "Dados fictícios" : "Dados reais"}
             </span>
             <button
               className="btn ghost"
@@ -569,7 +612,7 @@ function App() {
               recebimentos e integrações são simulados; nenhuma ação real é
               realizada.
             </span>
-            <Badge>DRY_RUN</Badge>
+            <Badge>{state && !state.dryRun ? "REAL" : "DRY_RUN"}</Badge>
           </div>
           {error && (
             <div className="error-box" role="alert">

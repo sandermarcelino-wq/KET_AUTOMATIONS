@@ -12,7 +12,12 @@ import type {
   Worksite,
 } from "../../../packages/shared/src/index.js";
 
-export type UserSession = Session & { contactId: string; expiresAt: number };
+export type UserSession = Session & {
+  contactId: string;
+  expiresAt: number;
+  userId?: string;
+  mustChangePassword?: boolean;
+};
 export type Env = { Variables: { session: UserSession } };
 export type Executor = Pick<PGlite, "query"> | Pick<Transaction, "query">;
 export const text = z.string().trim().min(1).max(250);
@@ -75,7 +80,7 @@ export const tableNames = new Set([
 ]);
 export class ApiError extends Error {
   constructor(
-    public status: 400 | 401 | 403 | 404 | 409,
+    public status: 400 | 401 | 403 | 404 | 409 | 429,
     message: string,
     public code?: string,
   ) {
@@ -125,15 +130,22 @@ export async function get<T>(
   table: string,
   tenantId: string,
   id: string,
+  forUpdate = false,
 ): Promise<T> {
   if (!uuid.safeParse(id).success)
     throw new ApiError(404, "Registro não encontrado.");
   const result = await db.query<{ data: T }>(
-    `SELECT data FROM ${validTable(table)} WHERE tenant_id=$1 AND id=$2`,
+    `SELECT data FROM ${validTable(table)} WHERE tenant_id=$1 AND id=$2${forUpdate ? " FOR UPDATE" : ""}`,
     [tenantId, id],
   );
   if (!result.rows[0]) throw new ApiError(404, "Registro não encontrado.");
   return result.rows[0].data;
+}
+/** Trava consultiva até o fim da transação: serializa operações idempotentes/numeração sob concorrência real. */
+export async function lockKey(db: Executor, key: string) {
+  await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+    key,
+  ]);
 }
 export async function audit(
   db: Executor,
@@ -193,7 +205,14 @@ export async function assertWorksite(
   return worksite;
 }
 export async function requestFor(db: Executor, s: UserSession, id: string) {
-  const request = await get<MaterialRequest>(db, "requests", s.tenant.id, id);
+  // FOR UPDATE: mutações da mesma solicitação são serializadas (idempotência e anti-duplicidade)
+  const request = await get<MaterialRequest>(
+    db,
+    "requests",
+    s.tenant.id,
+    id,
+    true,
+  );
   await assertWorksite(db, s, request.worksiteId);
   if (s.role === "site_requester" && request.contactId !== s.contactId)
     throw new ApiError(404, "Solicitação não encontrada.");

@@ -27,7 +27,7 @@ export interface Integrations {
   now: () => Date;
 }
 export function integrationsFromEnv(env = process.env): Integrations {
-  const live = env.WHATSAPP_LIVE === "true";
+  const live = env.WHATSAPP_LIVE === "true" && env.DRY_RUN === "false";
   const accessToken = env.META_ACCESS_TOKEN || null;
   const tpl = env.WHATSAPP_GENERIC_TEMPLATE?.split(":");
   return {

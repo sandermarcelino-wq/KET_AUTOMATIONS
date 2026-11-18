@@ -8,6 +8,37 @@ export interface Session {
   tenant: Tenant;
   role: Role;
   userName: string;
+  mustChangePassword?: boolean;
+  /** Sessão de demonstração (login de desenvolvimento). */
+  dev?: boolean;
+}
+export interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: Role;
+  status: "ACTIVE" | "DISABLED";
+  mustChangePassword: boolean;
+  worksiteIds: string[];
+  lastLoginAt: string | null;
+}
+export interface PlanInfo {
+  plan: string;
+  limits: {
+    worksites: number | null;
+    users: number | null;
+    storageMb: number | null;
+    messagesPerMonth: number | null;
+    aiCallsPerMonth: number | null;
+  };
+  usage: {
+    worksites: number;
+    users: number;
+    storageMb: number;
+    messagesThisMonth: number;
+    aiCallsThisMonth: number;
+  };
 }
 export interface Worksite {
   id: string;
@@ -652,7 +683,9 @@ export interface State {
   accountants: AccountantContact[];
   promotions: Promotion[];
   whatsapp: WhatsAppStatus | null;
-  dryRun: true;
+  users: AppUser[];
+  planInfo: PlanInfo | null;
+  dryRun: boolean;
 }
 export interface ImportRow {
   row: number;

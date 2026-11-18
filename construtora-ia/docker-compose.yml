@@ -1,0 +1,14 @@
+# Exemplo de implantação em um servidor com HTTPS na frente (Caddy/Nginx/Cloudflare). Ajuste os valores.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports: ["127.0.0.1:3001:3001"]   # exponha apenas via proxy HTTPS
+    env_file: .env.production         # ver .env.example e docs/DEPLOY.md; NUNCA versione este arquivo
+    environment:
+      NODE_ENV: production
+      TRUST_PROXY: "true"
+    volumes:
+      - construtora-data:/data         # banco embarcado; com DATABASE_URL (PostgreSQL) o volume é dispensável
+volumes:
+  construtora-data:

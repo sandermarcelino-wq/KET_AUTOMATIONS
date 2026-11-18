@@ -32,6 +32,7 @@ import {
   audit,
   get,
   list,
+  lockKey,
   now,
   price,
   putMessage,
@@ -147,6 +148,7 @@ export function registerFiscal(app: Hono<Env>, { scoped, integrations }: Deps) {
     return c.json(
       await scoped(s, async (tx) => {
         const t = s.tenant.id;
+        await lockKey(tx, `fiscal:${t}`); // mesma chave não duplica sob concorrência
         let parsed: ReturnType<typeof parseNfeXml> | null = null;
         let xmlId: string | null = null;
         let pdfId: string | null = null;

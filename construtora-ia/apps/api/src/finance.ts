@@ -375,6 +375,13 @@ export function registerFinance(app: Hono<Env>, { scoped }: Deps) {
             "NEEDS_ORDER_ID",
           );
         const order = orders[0];
+        await get<PurchaseOrder>(
+          tx,
+          "purchase_orders",
+          tenantId,
+          order.id,
+          true,
+        );
         const existing = (
           await tx.query<{ data: Delivery }>(
             "SELECT data FROM deliveries WHERE tenant_id=$1 AND order_id=$2 AND document_number=$3",
@@ -907,6 +914,7 @@ export function registerFinance(app: Hono<Env>, { scoped }: Deps) {
       "payment_obligations",
       s.tenant.id,
       id,
+      true,
     );
     await assertWorksite(tx, s, ob.worksiteId);
     return ob;

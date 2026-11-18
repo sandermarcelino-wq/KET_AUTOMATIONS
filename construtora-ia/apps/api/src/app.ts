@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z, ZodError } from "zod";
-import type { Transaction } from "@electric-sql/pglite";
+import type { PGlite, Transaction } from "@electric-sql/pglite";
 import {
   createDatabase,
   seedDatabase,
@@ -39,6 +39,17 @@ import {
   type WaDeps,
 } from "./whatsapp.js";
 import { integrationsFromEnv, type Integrations } from "./runtime.js";
+import { resolveConfig } from "./config.js";
+import { securityHeaders } from "./security.js";
+import {
+  authState,
+  createTenantWithOwner,
+  loadDbSession,
+  registerAuth,
+} from "./auth.js";
+import { registerPlatform } from "./platform.js";
+import { registerLgpd } from "./lgpd.js";
+import { assertWithinPlan, bumpUsage } from "./services.js";
 import { runTenantJobs } from "./jobs.js";
 import {
   ApiError,
@@ -52,6 +63,7 @@ import {
   isEligible,
   isUrgent,
   list,
+  lockKey,
   now,
   price,
   putMessage,
@@ -82,35 +94,54 @@ const importSchema = z
   })
   .strict();
 
+/** Primeira implantação: cria empresa + proprietário a partir do ambiente, se ainda não existir nenhum usuário. */
+async function bootstrapOwner(db: PGlite) {
+  const e = process.env;
+  if (!e.BOOTSTRAP_OWNER_EMAIL || !e.BOOTSTRAP_OWNER_PASSWORD) return;
+  const n = (
+    await db.query<{ n: number }>("SELECT count(*)::int AS n FROM users")
+  ).rows[0].n;
+  if (n > 0) return;
+  if (!/^\+[1-9]\d{7,14}$/.test(e.BOOTSTRAP_OWNER_PHONE ?? ""))
+    throw new Error(
+      "BOOTSTRAP_OWNER_PHONE deve estar no formato E.164, ex.: +5511999990000.",
+    );
+  await createTenantWithOwner(db, {
+    companyName: e.BOOTSTRAP_COMPANY ?? "Minha Construtora",
+    ownerName: e.BOOTSTRAP_OWNER_NAME ?? "Proprietário",
+    email: e.BOOTSTRAP_OWNER_EMAIL,
+    phone: e.BOOTSTRAP_OWNER_PHONE!,
+    password: e.BOOTSTRAP_OWNER_PASSWORD,
+    mustChange: true,
+  });
+}
+
 export async function createApp(
   options: {
     dataDir?: string;
     seed?: boolean;
+    devAuth?: boolean;
+    signupEnabled?: boolean;
     integrations?: Partial<Omit<Integrations, "whatsapp">> & {
       whatsapp?: Partial<Integrations["whatsapp"]>;
     };
   } = {},
 ) {
-  if (
-    (process.env.DRY_RUN && process.env.DRY_RUN !== "true") ||
-    process.env.NODE_ENV === "production" ||
-    process.env.DEV_AUTH_ENABLED === "false"
-  ) {
-    throw new Error(
-      "Esta versão permite apenas DRY_RUN=true e autenticação de desenvolvimento; produção está bloqueada.",
-    );
-  }
-  if (process.env.WHATSAPP_LIVE === "true") {
-    throw new Error(
-      "WHATSAPP_LIVE=true exige autenticação real no painel (não disponível com o login de desenvolvimento).",
-    );
-  }
+  // Recusa configurações inseguras (produção com login de desenvolvimento, modo real sem credenciais etc.).
+  const cfg = resolveConfig(process.env, {
+    ...(options.devAuth !== undefined ? { devAuth: options.devAuth } : {}),
+    ...(options.signupEnabled !== undefined
+      ? { signupEnabled: options.signupEnabled }
+      : {}),
+  });
   const db = await createDatabase(options.dataDir);
-  if (options.seed !== false) await seedDatabase(db);
+  if (options.seed ?? cfg.seedDemo) await seedDatabase(db);
+  await bootstrapOwner(db);
   const sessions = new Map<string, UserSession>();
   const base = integrationsFromEnv();
   const integ: Integrations = {
     ...base,
+    live: cfg.live,
     ...options.integrations,
     whatsapp: { ...base.whatsapp, ...options.integrations?.whatsapp },
   };
@@ -131,76 +162,105 @@ export async function createApp(
         ),
     })(c, next),
   );
+  app.use("*", securityHeaders(cfg.hsts));
   app.use("/api/*", async (c, next) => {
     c.header("Cache-Control", "no-store");
-    c.header("X-Content-Type-Options", "nosniff");
     await next();
   });
   app.get("/api/health", (c) =>
     c.json({
       status: "ok",
-      dryRun: true,
-      stage: 1,
-      database: "PostgreSQL embarcado (PGlite)",
-      authentication: "development-only",
+      dryRun: !integ.live,
+      stage: 5,
+      database: process.env.DATABASE_URL
+        ? "PostgreSQL"
+        : "PostgreSQL embarcado (PGlite)",
+      authentication: cfg.devAuth ? "development-only" : "password",
+      signupEnabled: cfg.signupEnabled,
     }),
   );
-  app.get("/api/dev/tenants", async (c) =>
-    c.json(
-      (await db.query<Tenant>("SELECT id,name FROM tenants ORDER BY id")).rows,
-    ),
-  );
-  app.post("/api/dev/login", async (c) => {
-    const body = z
-      .object({
-        tenantId: uuid,
-        role: z.enum(["owner", "site_requester", "operator_readonly"]),
-      })
-      .strict()
-      .parse(await c.req.json());
-    const tenant = (
-      await db.query<Tenant>("SELECT id,name FROM tenants WHERE id=$1", [
-        body.tenantId,
-      ])
-    ).rows[0];
-    if (!tenant) throw new ApiError(404, "Organização não encontrada.");
-    const contact = (await list<Contact>(db, "contacts", tenant.id)).find(
-      (x) => x.role === body.role,
+  if (cfg.devAuth) {
+    app.get("/api/dev/tenants", async (c) =>
+      c.json(
+        (await db.query<Tenant>("SELECT id,name FROM tenants ORDER BY id"))
+          .rows,
+      ),
     );
-    if (!contact)
-      throw new ApiError(403, "Perfil indisponível para esta organização.");
-    // Login deliberadamente simulado: nunca aceita senhas nem credenciais reais.
-    for (const [key, value] of sessions) {
-      if (value.expiresAt < Date.now()) sessions.delete(key);
-    }
-    if (sessions.size > 1000)
-      throw new ApiError(
-        409,
-        "Limite de sessões de demonstração atingido. Reinicie a API.",
+    app.post("/api/dev/login", async (c) => {
+      const body = z
+        .object({
+          tenantId: uuid,
+          role: z.enum(["owner", "site_requester", "operator_readonly"]),
+        })
+        .strict()
+        .parse(await c.req.json());
+      const tenant = (
+        await db.query<Tenant>("SELECT id,name FROM tenants WHERE id=$1", [
+          body.tenantId,
+        ])
+      ).rows[0];
+      if (!tenant) throw new ApiError(404, "Organização não encontrada.");
+      const contact = (await list<Contact>(db, "contacts", tenant.id)).find(
+        (x) => x.role === body.role,
       );
-    const session: UserSession = {
-      token: randomUUID() + randomUUID(),
-      tenant,
-      role: body.role,
-      userName: contact.name,
-      contactId: contact.id,
-      expiresAt: Date.now() + 8 * 3600000,
-    };
-    sessions.set(session.token, session);
-    const { token, role, userName } = session;
-    return c.json({ token, tenant, role, userName });
-  });
+      if (!contact)
+        throw new ApiError(403, "Perfil indisponível para esta organização.");
+      // Login deliberadamente simulado: só existe com DEV_AUTH_ENABLED e nunca aceita credenciais reais.
+      for (const [key, value] of sessions) {
+        if (value.expiresAt < Date.now()) sessions.delete(key);
+      }
+      if (sessions.size > 1000)
+        throw new ApiError(
+          409,
+          "Limite de sessões de demonstração atingido. Reinicie a API.",
+        );
+      const session: UserSession = {
+        token: randomUUID() + randomUUID(),
+        tenant,
+        role: body.role,
+        userName: contact.name,
+        contactId: contact.id,
+        expiresAt: Date.now() + 8 * 3600000,
+      };
+      sessions.set(session.token, session);
+      const { token, role, userName } = session;
+      return c.json({ token, tenant, role, userName });
+    });
+  }
+  registerAuth(app, { db, cfg, scoped }, "public");
+  registerPlatform(app, db);
   app.use("/api/*", async (c, next) => {
     const token = c.req.header("Authorization")?.replace(/^Bearer /, "");
-    const s = token ? sessions.get(token) : undefined;
+    let s = token ? sessions.get(token) : undefined;
+    if (!s && token && token.length >= 30)
+      s = (await loadDbSession(db, token)) ?? undefined;
     if (!s || s.expiresAt < Date.now())
       return c.json(
-        { error: "Entre com um perfil de demonstração para continuar." },
+        {
+          error: cfg.devAuth
+            ? "Entre com um perfil de demonstração para continuar."
+            : "Sessão expirada ou ausente. Entre novamente.",
+        },
         401,
+      );
+    if (
+      s.mustChangePassword &&
+      !["/api/auth/password", "/api/auth/me", "/api/auth/logout"].includes(
+        c.req.path,
+      )
+    )
+      return c.json(
+        {
+          error: "Troque a senha provisória para continuar.",
+          code: "PASSWORD_CHANGE_REQUIRED",
+        },
+        403,
       );
     c.set("session", s);
     await next();
   });
+  registerAuth(app, { db, cfg, scoped }, "private");
+  registerLgpd(app, { scoped });
   async function scoped<T>(
     s: UserSession,
     fn: (tx: Transaction) => Promise<T>,
@@ -336,6 +396,7 @@ export async function createApp(
       const banking = await bankingState(tx, s);
       const fiscal = await fiscalState(tx, s);
       const whatsappInfo = await whatsappState(tx, s, integ);
+      const authInfo = await authState(tx, s);
       return {
         ...purchasing,
         ...finance,
@@ -343,10 +404,11 @@ export async function createApp(
         ...banking,
         ...fiscal,
         whatsapp: whatsappInfo,
+        ...authInfo,
         tenant: s.tenant,
         role: s.role,
         userName: s.userName,
-        dryRun: true,
+        dryRun: !integ.live,
         worksites: restricted
           ? worksites.filter((w) => self.worksiteIds.includes(w.id))
           : worksites,
@@ -383,6 +445,7 @@ export async function createApp(
     const worksite: Worksite = { id: randomUUID(), ...body };
     return c.json(
       await scoped(s, async (tx) => {
+        await assertWithinPlan(tx, s.tenant.id, "worksites");
         await tx.query(
           "INSERT INTO worksites(id,tenant_id,data) VALUES($1,$2,$3)",
           [worksite.id, s.tenant.id, JSON.stringify(worksite)],
@@ -741,6 +804,7 @@ export async function createApp(
       .parse(await c.req.json());
     return c.json(
       await scoped(s, async (tx) => {
+        await lockKey(tx, `msg:${s.tenant.id}:${body.providerMessageId}`);
         await assertWorksite(tx, s, body.worksiteId);
         const sender = (await list<Contact>(tx, "contacts", s.tenant.id)).find(
           (x) =>
@@ -775,6 +839,8 @@ export async function createApp(
             duplicate: true,
           };
         }
+        if (integ.ai.mode === "anthropic")
+          await bumpUsage(tx, s.tenant.id, "ai_calls");
         const extracted = await integ.ai.extractRequest(
           body.text,
           await list<Material>(tx, "materials", s.tenant.id),
@@ -1084,6 +1150,7 @@ export async function createApp(
     runAllJobs,
     dispatchOutbox: (at?: Date) => dispatchOutbox(waDeps, at),
     integrations: integ,
+    config: cfg,
     close: () => db.close(),
   };
 }

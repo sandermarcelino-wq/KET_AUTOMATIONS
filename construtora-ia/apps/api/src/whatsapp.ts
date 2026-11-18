@@ -42,7 +42,13 @@ import {
   type UserSession,
 } from "./common.js";
 import { computeCashFlow } from "./sales.js";
-import { notify, ownerOf, sniffMime, storeAttachment } from "./services.js";
+import {
+  bumpUsage,
+  notify,
+  ownerOf,
+  sniffMime,
+  storeAttachment,
+} from "./services.js";
 import type { Integrations } from "./runtime.js";
 
 type Scoped = <T>(
@@ -789,6 +795,10 @@ export async function processInbound(
       );
       // Leitura por IA (se configurada) para o encarregado; senão pede para digitar. A IA só sugere; as regras decidem.
       if (contact?.role === "site_requester") {
+        if (integ.ai.mode === "anthropic")
+          await inTenant(deps, tenantId, (tx) =>
+            bumpUsage(tx, tenantId, "ai_calls"),
+          );
         const ex = await integ.ai.extractDelivery({
           bytes: media.bytes,
           mime: media.mime,
@@ -805,6 +815,10 @@ export async function processInbound(
           return "DONE";
         }
       } else if (contact?.role === "owner") {
+        if (integ.ai.mode === "anthropic")
+          await inTenant(deps, tenantId, (tx) =>
+            bumpUsage(tx, tenantId, "ai_calls"),
+          );
         const ex = await integ.ai.extractProof({
           bytes: media.bytes,
           mime: media.mime,

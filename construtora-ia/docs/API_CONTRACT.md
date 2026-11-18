@@ -38,3 +38,7 @@ Erros de regra de negócio trazem `{error, code}`. Valores monetários são stri
 - POST /api/purchase-orders/:id/supplier-response {providerMessageId, action:'CONFIRM'|'CHANGE'|'UNAVAILABLE', confirmsSameTerms?, unitPrice?, quantity?, freight?, otherCosts?, leadDays?, paymentTerms?}. `CONFIRM` exige `confirmsSameTerms:true`; qualquer termo diferente reabre a aprovação (v+1).
 - `GET /api/state` passa a incluir `quotes, comparisons, orders, approvals, priceAuthorizations, deviations, priceControl` (vazios para encarregado).
 - `GET /api/health` → `stage: 1`.
+
+
+## Etapas 2–5 (resumo; os esquemas ficam em `packages/shared` e nas rotas de `apps/api/src`)
+Autenticação: `POST /api/auth/login|signup|logout|password`, `GET /api/auth/me`; usuários: `POST/PATCH /api/users`, `POST /api/users/:id/reset-password`. Recebimento/pagamentos: `/api/deliveries`, `/api/purchase-orders/:id/payment-plan`, `/api/payment-obligations/:id/{pix-request,proofs,confirm,cancel}`, `/api/suppliers/:id/pix-keys`, `/api/pix-keys/:id/{verify,reject}`. Vendas/caixa: `/api/units`, `/api/buyers`, `/api/contracts*`, `/api/installments/:id/*`, `/api/cash-flow`, `/api/cash-entries`, `/api/bank-accounts`. Extratos/fiscal/contábil: `/api/bank-statements`, `/api/bank-lines/*`, `/api/fiscal-documents`, `/api/accounting/*`, `/api/promotions*`, `/api/exports/:relatório.csv`. WhatsApp: `/webhook/whatsapp` (público, assinado), `/api/whatsapp/*`. LGPD: `/api/lgpd/buyers/:id/{export,anonymize}`. Operador: `/api/platform/*` (`x-platform-admin`). `GET /api/state` devolve todas as listas conforme o perfil.

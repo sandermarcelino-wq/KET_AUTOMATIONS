@@ -34,6 +34,7 @@ import {
   get,
   hash,
   list,
+  lockKey,
   now,
   price,
   text,
@@ -570,6 +571,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
             e instanceof Error ? e.message : "Cronograma inválido.",
           );
         }
+        await lockKey(tx, `contracts:${t}`); // numeração sem corrida
         const total = (await list<SalesContract>(tx, "sales_contracts", t))
           .length;
         const contract: SalesContract = {
@@ -632,6 +634,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
           "sales_contracts",
           s.tenant.id,
           c.req.param("id"),
+          true,
         );
         const stored = await storeAttachment(
           tx,
@@ -695,6 +698,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
           "sales_contracts",
           t,
           c.req.param("id"),
+          true,
         );
         if (contract.status === "CANCELLED") return contract;
         for (const i of await installmentsOf(tx, t, contract.id))
@@ -744,6 +748,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
           "sales_contracts",
           t,
           c.req.param("id"),
+          true,
         );
         if (contract.status !== "ACTIVE")
           throw new ApiError(
@@ -851,6 +856,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
           "sales_contracts",
           s.tenant.id,
           c.req.param("id"),
+          true,
         );
         const plan = await adjustmentPlan(tx, s.tenant.id, contract);
         return {
@@ -879,6 +885,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
           "sales_contracts",
           s.tenant.id,
           c.req.param("id"),
+          true,
         );
         const plan = await adjustmentPlan(tx, s.tenant.id, contract);
         for (const p of plan)
@@ -915,6 +922,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
           "receivable_installments",
           s.tenant.id,
           c.req.param("id"),
+          true,
         );
         if (CLOSED.has(i.status))
           throw new ApiError(409, "Parcela encerrada não pode ser reajustada.");
@@ -960,6 +968,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
           "receivable_installments",
           s.tenant.id,
           c.req.param("id"),
+          true,
         );
         if (CLOSED.has(i.status))
           throw new ApiError(
@@ -1009,6 +1018,7 @@ export function registerSales(app: Hono<Env>, { scoped }: Deps) {
           "receivable_installments",
           t,
           c.req.param("id"),
+          true,
         );
         const clientRef =
           body.clientRef ?? `auto:${hash({ id: inst.id, body })}`;

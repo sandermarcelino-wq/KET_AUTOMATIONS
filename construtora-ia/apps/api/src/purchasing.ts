@@ -42,6 +42,7 @@ import {
   get,
   hash,
   list,
+  lockKey,
   now,
   price,
   putMessage,
@@ -187,6 +188,7 @@ export async function orderFor(tx: Transaction, s: UserSession, id: string) {
     "purchase_orders",
     s.tenant.id,
     id,
+    true, // FOR UPDATE: aprovações/respostas concorrentes do mesmo pedido são serializadas
   );
   await assertWorksite(tx, s, order.worksiteId);
   return order;
@@ -782,7 +784,14 @@ export function registerPurchasing(app: Hono<Env>, { scoped }: Deps) {
           paymentTerms: quote.paymentTerms!,
           brand: quote.brand,
         };
-        const number = Math.max(0, ...orders.map((o) => o.number)) + 1;
+        await lockKey(tx, `order-number:${tenantId}`);
+        const number =
+          Math.max(
+            0,
+            ...(await list<PurchaseOrder>(tx, "purchase_orders", tenantId)).map(
+              (o) => o.number,
+            ),
+          ) + 1;
         const order: PurchaseOrder = {
           id: randomUUID(),
           number,

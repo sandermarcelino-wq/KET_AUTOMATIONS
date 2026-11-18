@@ -840,6 +840,9 @@ function Buyers({ state, session, mutate, busy }: Props) {
                   <th>CPF/CNPJ</th>
                   <th>Contato</th>
                   <th>Base legal (LGPD)</th>
+                  <th>
+                    <span className="sr-only">Direitos do titular</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -860,6 +863,54 @@ function Buyers({ state, session, mutate, busy }: Props) {
                           OBRIGACAO_LEGAL: "Obrigação legal",
                         }[b.legalBasis]
                       }
+                    </td>
+                    <td>
+                      {owner && (
+                        <>
+                          <button
+                            className="btn secondary small"
+                            onClick={async () => {
+                              try {
+                                const data = await api<unknown>(
+                                  `/lgpd/buyers/${b.id}/export`,
+                                  session.token,
+                                );
+                                const url = URL.createObjectURL(
+                                  new Blob([JSON.stringify(data, null, 2)], {
+                                    type: "application/json",
+                                  }),
+                                );
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `dados-titular-${b.id.slice(0, 8)}.json`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              } catch (e) {
+                                window.alert(errorText(e));
+                              }
+                            }}
+                          >
+                            Exportar dados
+                          </button>{" "}
+                          <button
+                            className="btn ghost small"
+                            disabled={busy}
+                            onClick={() => {
+                              const reason = window.prompt(
+                                "Eliminação LGPD: informe o motivo (só é possível sem contrato vinculado):",
+                              );
+                              if (reason && reason.trim())
+                                void mutate(
+                                  `/lgpd/buyers/${b.id}/anonymize`,
+                                  { reason: reason.trim(), confirmed: true },
+                                  "Dados do titular eliminados.",
+                                );
+                            }}
+                          >
+                            Eliminar
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

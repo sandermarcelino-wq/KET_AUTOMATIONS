@@ -60,3 +60,12 @@ Conserve uma cópia da planilha original. Exporte CSV, mapeie colunas e confira 
 Esta versão não está habilitada para produção. As próximas entregas devem implementar e homologar identidade real, credenciais protegidas, autorização sensível, servidor PostgreSQL remoto com acesso mínimo, isolamento sob os papéis finais, backups/restauração, métricas, filas e integrações autorizadas. A presença de migrações SQL não demonstra uma implantação Supabase validada.
 
 Sem autorização e configuração explícitas, não conecte fornecedores, WhatsApp, conta bancária, serviços de IA ou destinatários contábeis.
+
+
+## Operação em produção (Etapa 5)
+- Implantação, variáveis e Meta: `docs/DEPLOY.md`. Segurança: `docs/SECURITY.md`.
+- **Saúde**: `GET /api/health`. **Fila de WhatsApp**: tela WhatsApp (falhas e bloqueios) e `POST /api/whatsapp/dispatch`. **Falhas de entrada**: `GET /api/whatsapp/inbound-failures` e `POST /api/whatsapp/inbound/:id/reprocess`.
+- **Rotinas**: executam a cada `JOBS_INTERVAL_MINUTES`; são idempotentes e podem ser disparadas em `POST /api/jobs/run`.
+- **Backup/restauração**: `npm run backup` / `npm run restore` (PGlite) ou `pg_dump`. Teste a restauração.
+- **Usuário bloqueado/esqueceu a senha**: o proprietário redefine em Configurações → Usuários; a senha do proprietário é redefinida pelo operador diretamente no banco/script de implantação.
+- **Incidente de chave Pix ou token vazado**: revogue o token na Meta, troque `META_ACCESS_TOKEN`, reinicie; invalide chaves Pix suspeitas em Financeiro → Chaves Pix.

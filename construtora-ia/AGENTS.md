@@ -1,6 +1,6 @@
 # Instruções permanentes de projeto — Construtora IA
 
-Leia `docs/SPEC.md` antes de alterações. A especificação é a fonte de verdade funcional e de segurança. Esta entrega implementa as Etapas 0 e 1; preserve o documento fornecido e registre decisões em `docs/ADR/`.
+Leia `docs/SPEC.md` antes de alterações. A especificação é a fonte de verdade funcional e de segurança. Esta entrega implementa as Etapas 0 a 5; preserve o documento fornecido e registre decisões em `docs/ADR/`.
 
 Implemente uma etapa por vez e mantenha o modo simulado até autorização explícita. Preserve orçamento-base, registro de preço autorizado e trilha de auditoria; não realize compras, pagamentos, mensagens reais nem alterações bancárias sem configuração e testes. No MVP, somente o proprietário aprova cada compra; preço autorizado e aprovação de compra são controles distintos. Essas aprovações estão implementadas na Etapa 1 (`apps/api/src/purchasing.ts`, migração 003); qualquer mudança de regra exige teste e ADR.
 

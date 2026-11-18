@@ -29,6 +29,7 @@ import {
   audit,
   get,
   list,
+  lockKey,
   now,
   text,
   uuid,
@@ -160,6 +161,7 @@ export function registerBanking(app: Hono<Env>, { scoped }: Deps) {
     return c.json(
       await scoped(s, async (tx) => {
         const t = s.tenant.id;
+        await lockKey(tx, `bank:${body.accountId}`);
         await get<BankAccount>(tx, "bank_accounts", t, body.accountId);
         const fileHash = createHash("sha256")
           .update(body.content)

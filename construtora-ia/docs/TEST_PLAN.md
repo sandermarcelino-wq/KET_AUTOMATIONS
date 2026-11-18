@@ -1,4 +1,4 @@
-# Plano e evidências de testes — Etapas 0 e 1
+# Plano e evidências de testes — Etapas 0 a 5
 
 Esta entrega cobre o projeto e o simulador (Etapa 0) e compras e aprovações (Etapa 1) definidos na seção 18 de [SPEC.md](SPEC.md). Cenários de recebimento, Pix, cheques, financeiro e contabilidade da seção 19 continuam reservados às etapas correspondentes.
 
@@ -101,3 +101,19 @@ A interface contém regras responsivas. Viewports móveis não foram exercitados
 - T20: persistência local verificada quando executado o ensaio de reinício; indisponibilidade de provedor, filas externas e alertas operacionais não homologados.
 
 Não foram integrados números de WhatsApp, APIs de IA, bancos comerciais ou Supabase remoto. Nenhum resultado local deve ser descrito como validação desses serviços.
+
+
+## Etapas 2 a 5 — cobertura e evidências (resumo)
+
+| Arquivo | Foco |
+|---|---|
+| `receiving-payments.test.ts` | T09–T12: recebimento parcial/excesso/ilegível, 10 cheques sem duplicar custo, Pix (chave nova bloqueada, duas mensagens, comprovante ≠ pago, valor divergente), rotinas D-7/D-2/D0, cotação no prazo, configurações |
+| `sales.test.ts` | T14/T15: parcela vencida ≠ caixa, regra de correção por contrato, recebimento parcial/idempotente/estorno, renegociação, caixa 30/60/90, importador |
+| `stage4-domain.test.ts`, `whatsapp.test.ts` | Assinatura HMAC, T01/T19 por WhatsApp, janela de 24 h, fila/retentativas/falhas, mídia/áudio, consultas, IA validada |
+| `accounting.test.ts` | T13/T16/T17: NF-e sem duplicar, extrato repetido, conciliação conservadora, fechamento só do que falta, pacote ZIP, e-mail |
+| `auth.test.ts`, `config.test.ts` | Login/bloqueio/sessões, usuários e papéis, isolamento, planos, cabeçalhos, LGPD, configuração insegura recusada |
+| `backup.test.ts` | Backup a quente e restauração sem sobrescrever |
+
+**Evidência (18/11/2026):** `npm test` = **179 testes em 14 arquivos, aprovados em PGlite e em PostgreSQL 16.15** (mesma bateria, `TEST_PG_ADMIN_URL`); `typecheck`, `lint`, `build` sem erros; `npm audit` sem vulnerabilidades; inicialização em modo produção a partir de instalação só com dependências de execução; navegação real no Chromium (login por senha, troca obrigatória, telas principais) sem erros de console.
+
+**Não verificado:** Meta WhatsApp, Anthropic, STT e SMTP reais; build da imagem Docker; carga/desempenho; PostgreSQL gerenciado (Supabase) com papel não superusuário; aplicativos móveis reais; T20 (indisponibilidade de hospedagem) além de reprocessamento local.

@@ -1,5 +1,14 @@
 # Histórico de alterações
 
+## 1.0.0 — Etapa 5/8 (SaaS, autenticação real e preparação de produção) — 2026-11-18
+
+- Autenticação por e-mail e senha (scrypt, bloqueio, limites, sessões revogáveis), usuários e papéis, troca obrigatória de senha provisória, auto-cadastro opcional e bootstrap do proprietário.
+- Configuração segura de execução (produção recusa login de desenvolvimento/modo real sem credenciais), cabeçalhos de segurança, limites de taxa.
+- Planos/limites configuráveis pelo operador, medição de uso por empresa, LGPD (exportar/eliminar titular).
+- Adaptador PostgreSQL (`DATABASE_URL`) com travas de concorrência: **179 testes passam em PGlite e em PostgreSQL 16**.
+- Backup/restauração, Dockerfile e compose (imagem não construída aqui), guia de implantação e de segurança; 0 vulnerabilidades em `npm audit`.
+- Migração 007; ADR 0007.
+
 ## 0.5.0 — Etapa 4 (WhatsApp, IA, extratos, fiscal, contabilidade) — 2026-11-18
 
 - WhatsApp Cloud API: webhook assinado (HMAC), deduplicação, fila de saída com janela de 24 h/templates, retentativas e fila de falhas, status de entrega, mídia e áudio (STT), aprovação por código HMAC, consultas numéricas ao proprietário.

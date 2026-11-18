@@ -1,6 +1,13 @@
 -- A API usa este papel sem BYPASSRLS dentro de cada transação autenticada.
 -- Nunca fornecer a conexão superuser do PGlite a clientes.
-CREATE ROLE construtora_app NOLOGIN NOSUPERUSER NOBYPASSRLS;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'construtora_app') THEN
+    CREATE ROLE construtora_app NOLOGIN NOSUPERUSER NOBYPASSRLS;
+  END IF;
+END $$;
+-- Permite que a conexão da API assuma o papel restrito (SET LOCAL ROLE) em PostgreSQL de verdade.
+GRANT construtora_app TO CURRENT_USER;
 GRANT USAGE ON SCHEMA public TO construtora_app;
 GRANT SELECT ON tenants TO construtora_app;
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;

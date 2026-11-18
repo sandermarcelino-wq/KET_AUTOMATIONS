@@ -18,7 +18,7 @@ if (!["127.0.0.1", "localhost", "::1"].includes(hostname))
   throw new Error(
     "Login simulado restrito a loopback; HOST deve ser 127.0.0.1, localhost ou ::1.",
   );
-const { app, close, runAllJobs, dispatchOutbox, integrations } =
+const { app, close, runAllJobs, dispatchOutbox, integrations, config } =
   await createApp({
     dataDir: resolve(projectRoot, process.env.DATA_DIR ?? "data/construtora"),
   });
@@ -34,7 +34,7 @@ if (existsSync(resolve(staticRoot, "index.html"))) {
 const server = serve({ fetch: app.fetch, hostname, port }, () => {
   console.log(`Construtora IA — DRY_RUN: http://${hostname}:${port}`);
   console.log(
-    "Autenticação simulada. Banco local persistente. Nenhum envio externo.",
+    `Autenticação: ${config.devAuth ? "SIMULADA (somente desenvolvimento)" : "e-mail e senha"} · Banco: ${process.env.DATABASE_URL ? "PostgreSQL" : "embarcado (PGlite)"} · Mensagens: ${integrations.live ? "REAIS" : "simuladas"}`,
   );
 });
 // Rotinas (vencimentos, atrasos, prazos de cotação, resumo): a cada JOBS_INTERVAL_MINUTES (padrão 30; 0 desliga).
