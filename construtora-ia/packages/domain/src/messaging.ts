@@ -99,6 +99,7 @@ export type OwnerCommand =
       priceCap: boolean;
     }
   | { kind: "REJECT"; number: number | null }
+  | { kind: "PIX"; number: number | null }
   | { kind: "PAID"; amount: string }
   | { kind: "QUERY"; intent: QueryIntent }
   | { kind: "UNKNOWN" };
@@ -126,6 +127,8 @@ export function parseOwnerCommand(raw: string): OwnerCommand {
     };
   m = /^rejeitar(?:\s+(?:pedido\s+)?#?(\d{1,6}))?\s*$/.exec(t);
   if (m) return { kind: "REJECT", number: m[1] ? Number(m[1]) : null };
+  m = /^pix(?:\s+(?:pedido\s+)?#?(\d{1,6}))?\s*$/.exec(t);
+  if (m) return { kind: "PIX", number: m[1] ? Number(m[1]) : null };
   m =
     /^pago\s+(?:r\$\s*)?(\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)\s*$/.exec(
       t,

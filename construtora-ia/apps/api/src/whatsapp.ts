@@ -43,8 +43,10 @@ import {
 } from "./common.js";
 import { computeCashFlow } from "./sales.js";
 import {
+  attachmentInput,
   bumpUsage,
   notify,
+  loadSettings,
   ownerOf,
   sniffMime,
   storeAttachment,
@@ -410,6 +412,34 @@ async function handleOwner(ctx: Ctx, owner: Contact): Promise<string | null> {
       return `Pedido ${pad(order.number)} aprovado e enviado ao fornecedor${(r.body as { duplicate?: boolean }).duplicate ? " (já estava aprovado)" : ""}.`;
     return `Não foi possível aprovar: ${String(r.body.error)}`;
   }
+  if (cmd.kind === "PIX") {
+    const obs = await inTenant(deps, tenantId, async (tx) => {
+      const orders = await list<PurchaseOrder>(tx, "purchase_orders", tenantId);
+      return (
+        await list<PaymentObligation>(tx, "payment_obligations", tenantId)
+      ).filter(
+        (o) =>
+          o.kind === "PIX" &&
+          ["SCHEDULED", "DUE", "OVERDUE"].includes(o.status) &&
+          (!cmd.number ||
+            orders.find((x) => x.id === o.orderId)?.number === cmd.number),
+      );
+    });
+    if (obs.length !== 1)
+      return obs.length
+        ? "Há mais de um Pix a pagar. Informe o número do pedido, por exemplo: PIX 0003."
+        : "Nenhum Pix a pagar encontrado.";
+    const r = await deps.internal(
+      tenantId,
+      actorFor(owner),
+      "POST",
+      `/api/payment-obligations/${obs[0].id}/pix-request`,
+      { resend: true },
+    );
+    return r.status === 200
+      ? null
+      : `Não foi possível enviar os dados do Pix: ${String(r.body.error)}`;
+  }
   if (cmd.kind === "PAID") {
     const target = await inTenant(deps, tenantId, async (tx) =>
       (
@@ -541,8 +571,97 @@ async function handleRequester(
       kind,
     },
   );
-  if (r.status === 201) return null; // a rota registra a resposta (esclarecimento ou confirmação)
+  if (r.status === 201) {
+    // Pedido completo ⇒ já pede as cotações aos fornecedores (sem ninguém clicar).
+    const req = (r.body as { request?: { id: string; status: string } })
+      .request;
+    if (req?.status === "READY_TO_QUOTE") {
+      const cfg = await inTenant(deps, tenantId, (tx) =>
+        loadSettings(tx, tenantId),
+      );
+      if (cfg.autoQuote)
+        await deps.internal(
+          tenantId,
+          actorFor(c),
+          "POST",
+          `/api/requests/${req.id}/quote`,
+          {},
+        );
+    }
+    return null; // a rota registra a resposta (esclarecimento ou confirmação)
+  }
   return String(r.body.error ?? "Não consegui registrar o pedido.");
+}
+
+/**
+ * Quando todos os fornecedores convidados já responderam: encerra a cotação e, se houver uma melhor proposta
+ * sem ressalvas, PREPARA o pedido e envia o cartão de aprovação ao proprietário. Nunca autoriza nada.
+ */
+async function advanceRequest(
+  deps: WaDeps,
+  tenantId: string,
+  requestId: string,
+  system: { role: Role; contactId: string; userName: string },
+) {
+  const pending = await inTenant(deps, tenantId, async (tx) =>
+    Number(
+      (
+        await tx.query<{ n: number }>(
+          "SELECT count(*)::int AS n FROM quote_invitations WHERE tenant_id=$1 AND request_id=$2 AND status='SENT_SIMULATED'",
+          [tenantId, requestId],
+        )
+      ).rows[0].n,
+    ),
+  );
+  if (pending > 0) return;
+  const closed = await deps.internal(
+    tenantId,
+    system,
+    "POST",
+    `/api/requests/${requestId}/close-quoting`,
+    {},
+  );
+  if (closed.status !== 200) return;
+  const cfg = await inTenant(deps, tenantId, (tx) =>
+    loadSettings(tx, tenantId),
+  );
+  const cmp = (
+    closed.body as {
+      comparison?: {
+        recommendedQuoteId: string | null;
+        belowMinimum: boolean;
+        needsEmergencyApproval: boolean;
+      };
+    }
+  ).comparison;
+  if (cfg.autoPrepareOrder && cmp?.recommendedQuoteId && !cmp.belowMinimum) {
+    const prepared = await deps.internal(
+      tenantId,
+      system,
+      "POST",
+      `/api/requests/${requestId}/orders`,
+      {
+        quoteId: cmp.recommendedQuoteId,
+        // Preparação automática: o motivo registrado é o fato apurado; quem decide é o proprietário.
+        ...(cmp.needsEmergencyApproval
+          ? {
+              urgentJustification:
+                "Preparado automaticamente: a proposta mais barata não cumpre o prazo necessário (ou o prazo é urgente); esta é a menor que cumpre. Confira o comparativo antes de aprovar.",
+            }
+          : {}),
+      },
+    );
+    if (prepared.status === 201) return; // o cartão de aprovação já foi enviado ao proprietário
+  }
+  await inTenant(deps, tenantId, (tx) =>
+    notify(tx, tenantId, {
+      kind: "QUOTING_NEEDS_DECISION",
+      dedupeKey: `quote-decision:${requestId}`,
+      priority: "HIGH",
+      requestId,
+      text: "Todas as cotações chegaram, mas esta compra precisa da sua decisão (poucas propostas, urgência ou prazo). Abra Compras → Cotações.",
+    }),
+  );
 }
 
 async function handleSupplier(
@@ -636,8 +755,9 @@ async function handleSupplier(
       `/api/requests/${open[0].request_id}/quotes`,
       { supplierId: supplier.id, providerMessageId: ev.id, text },
     );
-    if (r.status === 201) return null; // rota pede esclarecimento quando falta algo
-    return null;
+    if (r.status === 201)
+      await advanceRequest(deps, tenantId, open[0].request_id, system);
+    return null; // a rota pede esclarecimento ao fornecedor quando falta algo
   }
   if (open.length > 1 && !hasPromo)
     return `Há mais de uma cotação aberta com você. Responda citando o ID da cotação (8 primeiros caracteres): ${open.map((o) => o.request_id.slice(0, 8)).join(", ")}.`;
@@ -697,6 +817,7 @@ export async function processInbound(
   deps: WaDeps,
   tenantId: string,
   ev: InboundMessage,
+  inline?: { bytes: Buffer; mime: string },
 ): Promise<"DONE" | "IGNORED"> {
   const ctx: Ctx = { tenantId, ev, deps };
   const { integrations: integ } = deps;
@@ -743,8 +864,9 @@ export async function processInbound(
   let text = ev.text ?? "";
   let kind: "text" | "audio_transcript" = "text";
   let attachmentId: string | null = null;
-  if (ev.mediaId && integ.whatsapp.client) {
-    const media = await integ.whatsapp.client.downloadMedia(ev.mediaId);
+  if (inline || (ev.mediaId && integ.whatsapp.client)) {
+    const media =
+      inline ?? (await integ.whatsapp.client!.downloadMedia(ev.mediaId!));
     if (ev.type === "audio") {
       const transcript = integ.stt
         ? await integ.stt.transcribe(media.bytes, media.mime)
@@ -1003,6 +1125,53 @@ export function registerWhatsApp(app: Hono<Env>, deps: WaDeps) {
     );
     return status;
   }
+  /**
+   * Simulador de conversa: o proprietário "fala" como encarregado, fornecedor ou ele mesmo.
+   * Usa exatamente o mesmo processamento do WhatsApp real. Só existe no modo simulado.
+   */
+  app.post("/api/simulator/whatsapp", async (c) => {
+    const s = c.get("session");
+    assertOwner(s);
+    if (integ.live)
+      throw new ApiError(409, "O simulador fica desligado no modo real.");
+    const body = z
+      .object({
+        from: z.string().regex(/^\+[1-9]\d{7,14}$/),
+        text: z.string().trim().max(4000).optional(),
+        attachment: attachmentInput.optional(),
+      })
+      .strict()
+      .refine(
+        (b) => b.text || b.attachment,
+        "Escreva uma mensagem ou anexe uma foto.",
+      )
+      .parse(await c.req.json());
+    let inline: { bytes: Buffer; mime: string } | undefined;
+    if (body.attachment) {
+      const bytes = Buffer.from(body.attachment.base64, "base64");
+      const mime = sniffMime(bytes);
+      if (
+        !mime ||
+        !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(
+          mime,
+        )
+      )
+        throw new ApiError(400, "Envie uma foto (JPG/PNG) ou PDF.");
+      inline = { bytes, mime };
+    }
+    const ev: InboundMessage = {
+      id: `sim.${randomUUID()}`,
+      from: body.from,
+      type: inline ? "image" : "text",
+      text: body.text ?? null,
+      mediaId: null,
+      mimeType: inline?.mime ?? null,
+      timestamp: Math.floor(Date.now() / 1000),
+      phoneNumberId: "simulador",
+    };
+    const status = await processInbound(deps, s.tenant.id, ev, inline);
+    return c.json({ status });
+  });
   app.post("/api/whatsapp/account", async (c) => {
     const s = c.get("session");
     assertOwner(s);

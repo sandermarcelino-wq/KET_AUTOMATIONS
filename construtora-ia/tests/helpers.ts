@@ -46,6 +46,19 @@ export async function setup(options: Parameters<typeof createApp>[0] = {}) {
   const readonly = await login(owner.tenant.id, "operator_readonly");
   const refresh = async (s = owner) =>
     (await call("/api/state", s)).body as unknown as State;
+  // Os testes antigos criam o cronograma à mão; o automático tem testes próprios.
+  const cfg = (await call("/api/settings", owner)).body;
+  await call(
+    "/api/settings",
+    owner,
+    {
+      ...cfg,
+      autoPaymentPlan: false,
+      autoQuote: false,
+      autoPrepareOrder: false,
+    },
+    "PUT",
+  );
   let state = await refresh();
   const supplier = (prefix: string) =>
     state.suppliers.find((s) => s.name.startsWith(prefix))!;

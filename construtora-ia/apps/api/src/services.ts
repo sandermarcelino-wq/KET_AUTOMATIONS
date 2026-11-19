@@ -22,6 +22,9 @@ export function defaultSettings(): TenantSettings {
     autoCloseQuotingAtDeadline: true,
     includeOverdueInProjection: false,
     promotionInquiryEnabled: false,
+    autoPaymentPlan: true,
+    autoQuote: true,
+    autoPrepareOrder: true,
   };
 }
 export const settingsSchema = z
@@ -34,6 +37,9 @@ export const settingsSchema = z
     autoCloseQuotingAtDeadline: z.boolean(),
     includeOverdueInProjection: z.boolean(),
     promotionInquiryEnabled: z.boolean(),
+    autoPaymentPlan: z.boolean(),
+    autoQuote: z.boolean(),
+    autoPrepareOrder: z.boolean(),
   })
   .strict();
 export async function loadSettings(

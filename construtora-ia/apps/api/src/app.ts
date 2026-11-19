@@ -1065,7 +1065,7 @@ export async function createApp(
     );
   });
   registerPurchasing(app, { scoped });
-  registerFinance(app, { scoped });
+  registerFinance(app, { scoped, integrations: integ });
   registerSales(app, { scoped });
   registerBanking(app, { scoped });
   registerFiscal(app, { scoped, db, integrations: integ });

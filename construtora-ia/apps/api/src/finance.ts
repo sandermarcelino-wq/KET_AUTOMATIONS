@@ -47,12 +47,15 @@ import {
 import { baselineOf, orderFor, saveOrder } from "./purchasing.js";
 import {
   attachmentInput,
+  bumpUsage,
   loadSettings,
   notify,
   ownerOf,
   settingsSchema,
+  sniffMime,
   storeAttachment,
 } from "./services.js";
+import type { Integrations } from "./runtime.js";
 
 const FUNDED = new Set(["CONFIRMED", "PARTIALLY_RECEIVED", "RECEIVED"]);
 const COMMITTED = new Set([
@@ -193,8 +196,12 @@ type Deps = {
     s: UserSession,
     fn: (tx: Transaction) => Promise<T>,
   ) => Promise<T>;
+  integrations: Integrations;
 };
-export function registerFinance(app: Hono<Env>, { scoped }: Deps) {
+export function registerFinance(
+  app: Hono<Env>,
+  { scoped, integrations }: Deps,
+) {
   // ---- configurações
   app.get("/api/settings", async (c) => {
     const s = c.get("session");
@@ -295,8 +302,8 @@ export function registerFinance(app: Hono<Env>, { scoped }: Deps) {
     .object({
       worksiteId: uuid,
       orderNumber: z.number().int().min(1).optional(),
-      documentNumber: text,
-      quantity,
+      documentNumber: text.optional(),
+      quantity: quantity.optional(),
       legible: z.boolean().default(true),
       attachment: attachmentInput.optional(),
     })
@@ -350,11 +357,49 @@ export function registerFinance(app: Hono<Env>, { scoped }: Deps) {
   app.post("/api/deliveries", async (c) => {
     const s = c.get("session");
     assertRequestWriter(s);
-    const body = deliveryBody.parse(await c.req.json());
+    const parsed = deliveryBody.parse(await c.req.json());
+    // Foto sem digitação: a IA (se configurada) lê número da nota, quantidade e pedido. Se não ler, pede para digitar.
+    let { documentNumber, quantity: qtyIn, orderNumber } = parsed;
+    let readByAi = false;
+    if (!documentNumber || !qtyIn) {
+      if (!parsed.attachment)
+        throw new ApiError(
+          400,
+          "Envie a foto da nota ou informe o número e a quantidade.",
+          "NEEDS_PHOTO_OR_DATA",
+        );
+      const bytes = Buffer.from(parsed.attachment.base64, "base64");
+      const mime = sniffMime(bytes);
+      const ex =
+        mime &&
+        ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(
+          mime,
+        )
+          ? await integrations.ai.extractDelivery({ bytes, mime })
+          : null;
+      if (!ex?.legible || !ex.documentNumber || !ex.quantity)
+        throw new ApiError(
+          409,
+          "Não consegui ler a nota automaticamente. Digite o número da nota e a quantidade.",
+          "NEEDS_TYPED_DATA",
+        );
+      documentNumber = ex.documentNumber;
+      qtyIn = ex.quantity;
+      orderNumber = orderNumber ?? ex.orderNumber ?? undefined;
+      readByAi = true;
+    }
+    const body = {
+      ...parsed,
+      documentNumber: documentNumber!,
+      quantity: qtyIn!,
+      orderNumber,
+    };
     return c.json(
       await scoped(s, async (tx) => {
         const tenantId = s.tenant.id;
         await assertWorksite(tx, s, body.worksiteId);
+        if (readByAi && integrations.ai.mode === "anthropic")
+          await bumpUsage(tx, tenantId, "ai_calls");
         const orders = (
           await list<PurchaseOrder>(tx, "purchase_orders", tenantId)
         ).filter(

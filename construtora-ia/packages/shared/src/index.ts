@@ -168,6 +168,8 @@ export interface SupplierQuote {
   availableQuantity: string | null;
   specConfirmed: boolean;
   unavailable: boolean;
+  /** Prazos em dias das parcelas (boleto/cheque), quando informados. */
+  installmentDays?: number[] | null;
   status: QuoteStatus;
   missing: string[];
   rawText: string;
@@ -232,6 +234,7 @@ export interface OrderTerms {
   deliveryDate: string;
   paymentTerms: PaymentTerms;
   brand: string | null;
+  installmentDays?: number[] | null;
 }
 export interface OrderUrgency {
   justification: string;
@@ -426,6 +429,12 @@ export interface TenantSettings {
   includeOverdueInProjection: boolean;
   /** Consulta semanal de promoções aos fornecedores com consentimento (desligada por padrão). */
   promotionInquiryEnabled: boolean;
+  /** Cria o cronograma de pagamento sozinho quando o fornecedor confirma o pedido. */
+  autoPaymentPlan: boolean;
+  /** Envia a cotação aos fornecedores assim que o pedido do encarregado está completo. */
+  autoQuote: boolean;
+  /** Prepara o pedido (sem autorizar) quando todos responderam e há uma melhor proposta sem ressalvas. */
+  autoPrepareOrder: boolean;
 }
 export type UnitStatus = "AVAILABLE" | "RESERVED" | "SOLD" | "CANCELLED";
 export interface PropertyUnit {

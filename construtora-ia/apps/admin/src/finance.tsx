@@ -238,8 +238,8 @@ export function Receiving({ state, session, worksiteId, mutate, busy }: Props) {
                   {
                     worksiteId: sel.worksiteId,
                     orderNumber: sel.number,
-                    documentNumber: docNo,
-                    quantity,
+                    ...(docNo.trim() ? { documentNumber: docNo.trim() } : {}),
+                    ...(quantity.trim() ? { quantity: quantity.trim() } : {}),
                     legible,
                     ...(attachment ? { attachment } : {}),
                   },
@@ -256,16 +256,16 @@ export function Receiving({ state, session, worksiteId, mutate, busy }: Props) {
               }
             }}
           >
-            <Field label="Nº da nota / romaneio">
+            <Field label="Nº da nota (deixe em branco se enviar a foto e a leitura automática estiver ligada)">
               <input
-                required
+                required={!file}
                 value={docNo}
                 onChange={(e) => setDocNo(e.target.value)}
               />
             </Field>
             <Field label={`Quantidade recebida (${sel.material})`}>
               <input
-                required
+                required={!file}
                 inputMode="decimal"
                 pattern="\d+(\.\d{1,3})?"
                 value={quantity}
@@ -1133,6 +1133,46 @@ export function SettingsPage({ state, session, mutate, busy }: Props) {
               />{" "}
               Consultar fornecedores semanalmente sobre promoções (apenas os com
               consentimento)
+            </span>
+          </label>
+          <label className="field full-width">
+            <span>
+              <input
+                type="checkbox"
+                disabled={!owner}
+                checked={f.autoQuote}
+                onChange={(e) => setF({ ...f, autoQuote: e.target.checked })}
+              />{" "}
+              Pedir cotações aos fornecedores automaticamente quando o pedido do
+              encarregado estiver completo
+            </span>
+          </label>
+          <label className="field full-width">
+            <span>
+              <input
+                type="checkbox"
+                disabled={!owner}
+                checked={f.autoPrepareOrder}
+                onChange={(e) =>
+                  setF({ ...f, autoPrepareOrder: e.target.checked })
+                }
+              />{" "}
+              Preparar o pedido sozinho quando todos responderem (você ainda
+              precisa aprovar)
+            </span>
+          </label>
+          <label className="field full-width">
+            <span>
+              <input
+                type="checkbox"
+                disabled={!owner}
+                checked={f.autoPaymentPlan}
+                onChange={(e) =>
+                  setF({ ...f, autoPaymentPlan: e.target.checked })
+                }
+              />{" "}
+              Criar o cronograma de pagamento sozinho quando o fornecedor
+              confirmar o pedido
             </span>
           </label>
           <label className="field full-width">

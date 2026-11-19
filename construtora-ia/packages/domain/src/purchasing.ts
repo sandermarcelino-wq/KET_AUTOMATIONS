@@ -97,6 +97,8 @@ export interface ParsedReply {
   availableQuantity: string | null;
   unavailable: boolean;
   specConfirmed: boolean;
+  /** Prazos em dias (ex.: 30/60/90) quando explícitos na mensagem. */
+  installmentDays: number[] | null;
   notes: string[];
 }
 const AMOUNT = String.raw`(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)`;
@@ -115,6 +117,7 @@ export function parseSupplierReply(text: string): ParsedReply {
     availableQuantity: null,
     unavailable: false,
     specConfirmed: true,
+    installmentDays: null,
     notes: [],
   };
   if (
@@ -178,6 +181,23 @@ export function parseSupplierReply(text: string): ParsedReply {
   else if (terms.length > 1)
     out.notes.push("Mais de uma condição de pagamento: confirme qual vale.");
 
+  // Parcelamento só quando explícito: "30/60/90 dias", "30, 60 e 90 dias" ou "3x a cada 30 dias".
+  const list = /\b(\d{1,3}(?:\s*(?:\/|,|e)\s*\d{1,3}){1,23})\s*dias\b/.exec(
+    input,
+  );
+  const every =
+    /\b(\d{1,2})\s*(?:x|parcelas?)\s*(?:a cada|de)\s*(\d{1,3})\s*dias\b/.exec(
+      input,
+    );
+  if (list) {
+    const days = list[1].split(/\s*(?:\/|,|e)\s*/).map(Number);
+    if (days.every((d) => d >= 0 && d <= 365)) out.installmentDays = days;
+  } else if (every) {
+    const n = Number(every[1]);
+    const step = Number(every[2]);
+    if (n >= 1 && n <= 24 && step >= 1)
+      out.installmentDays = Array.from({ length: n }, (_, i) => step * (i + 1));
+  }
   const partial =
     /\b(?:so|apenas|somente)\s+(?:temos |tenho )?(\d{1,9}(?:[.,]\d{1,3})?)\b/.exec(
       input,

@@ -1,5 +1,14 @@
 # Histórico de alterações
 
+## 1.1.0 — Automação ponta a ponta — 2026-11-19
+
+- Fluxo todo por conversa: pedido do pedreiro → cotação enviada sozinha aos fornecedores → respostas lidas → comparativo → pedido **preparado** para o proprietário aprovar → confirmação do fornecedor → cronograma de pagamento criado sozinho (Pix antecipado, à vista, boleto/cheque com os prazos informados) → foto da nota lida pela IA, arquivada e lançada em custos da obra e fluxo de caixa.
+- Continua por regra: compra só com aprovação do proprietário; pagamento/baixa só com confirmação dele; sem IA ligada, a foto não é lida às cegas (pede para digitar número e quantidade).
+- Boleto/cheque sem prazos informados: o sistema avisa e não inventa parcelas.
+- Comando do proprietário `PIX 0001` devolve os dados do Pix para pagar (chave em mensagem separada, para copiar).
+- Nova tela **Conversas** (simulador de WhatsApp para pedreiro, fornecedores e proprietário, com foto) e três opções em Configurações: cotar sozinho, preparar pedido sozinho, criar pagamento sozinho.
+- Recebimentos aceita só a foto quando há IA. 184 testes passam (5 novos, em `tests/automation.test.ts`).
+
 ## 1.0.0 — Etapa 5/8 (SaaS, autenticação real e preparação de produção) — 2026-11-18
 
 - Autenticação por e-mail e senha (scrypt, bloqueio, limites, sessões revogáveis), usuários e papéis, troca obrigatória de senha provisória, auto-cadastro opcional e bootstrap do proprietário.

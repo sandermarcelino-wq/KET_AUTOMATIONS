@@ -67,6 +67,7 @@ import { Prices, Purchasing } from "./purchasing";
 import { Cash, Sales } from "./sales";
 import { Accounting, Reconciliation, WhatsAppPage } from "./ops";
 import { ForcePasswordChange, PasswordAuth } from "./auth";
+import { Chats } from "./chats";
 import { Costs, Finance, Receiving, SettingsPage } from "./finance";
 import "./styles.css";
 
@@ -83,6 +84,7 @@ type Page =
   | "reconciliation"
   | "accounting"
   | "whatsapp"
+  | "chats"
   | "settings"
   | "simulator"
   | "budget"
@@ -106,6 +108,7 @@ const names: Record<Page, string> = {
   reconciliation: "Conciliação",
   accounting: "Contabilidade",
   whatsapp: "WhatsApp",
+  chats: "Conversas",
   settings: "Configurações",
   simulator: "Simulador",
   budget: "Orçamento-base",
@@ -409,6 +412,9 @@ function App() {
           { id: "accounting" as Page, icon: FileText },
           { id: "whatsapp" as Page, icon: MessageSquare },
         ]),
+    ...(session.role === "owner"
+      ? [{ id: "chats" as Page, icon: MessageCircle }]
+      : []),
     { id: "simulator", icon: MessageCircle },
     ...(session.role === "site_requester"
       ? []
@@ -568,6 +574,8 @@ function App() {
                       "Notas fiscais, cobrança de documentos faltantes e pacote mensal para o contador.",
                     whatsapp:
                       "Central de mensagens: números, fila, falhas e modo de operação.",
+                    chats:
+                      "Converse como pedreiro, fornecedor ou proprietário e veja o sistema agir sozinho.",
                     settings:
                       "Regras configuráveis da empresa, sem alterar o código.",
                     simulator:
@@ -689,6 +697,9 @@ function App() {
               )}
               {page === "accounting" && (
                 <Accounting {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "chats" && (
+                <Chats {...{ state, session, mutate, busy }} />
               )}
               {page === "whatsapp" && (
                 <WhatsAppPage

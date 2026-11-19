@@ -55,6 +55,7 @@ import {
   type UserSession,
 } from "./common.js";
 import { loadSettings } from "./services.js";
+import { createAutoPaymentPlan } from "./plans.js";
 
 const paymentTerms = z.enum([
   "A_VISTA",
@@ -401,6 +402,11 @@ export function registerPurchasing(app: Hono<Env>, { scoped }: Deps) {
       brand: text.optional(),
       availableQuantity: quantity.optional(),
       specConfirmed: z.boolean().optional(),
+      installmentDays: z
+        .array(z.number().int().min(0).max(365))
+        .min(1)
+        .max(24)
+        .optional(),
       unavailable: z.boolean().optional(),
     })
     .strict()
@@ -525,6 +531,11 @@ export function registerPurchasing(app: Hono<Env>, { scoped }: Deps) {
           ...fields,
           otherCosts: body.otherCosts ?? previous?.otherCosts ?? "0.00",
           brand: body.brand ?? parsed?.brand ?? previous?.brand ?? null,
+          installmentDays:
+            body.installmentDays ??
+            parsed?.installmentDays ??
+            previous?.installmentDays ??
+            null,
           status: evaluation.status,
           missing: [...evaluation.missing, ...(parsed?.notes ?? [])],
           rawText: body.text ?? "(campos informados no painel)",
@@ -783,6 +794,7 @@ export function registerPurchasing(app: Hono<Env>, { scoped }: Deps) {
           deliveryDate: analysis.deliveryDate,
           paymentTerms: quote.paymentTerms!,
           brand: quote.brand,
+          installmentDays: quote.installmentDays ?? null,
         };
         await lockKey(tx, `order-number:${tenantId}`);
         const number =
@@ -1363,6 +1375,8 @@ export function registerPurchasing(app: Hono<Env>, { scoped }: Deps) {
             ],
           };
           await saveOrder(tx, tenantId, next);
+          if ((await loadSettings(tx, tenantId)).autoPaymentPlan)
+            await createAutoPaymentPlan(tx, tenantId, next);
           await record();
           await audit(tx, s, "ORDER_SUPPLIER_CONFIRMED", order.id);
           return { order: next, duplicate: false };

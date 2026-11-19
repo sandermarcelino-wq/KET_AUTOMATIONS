@@ -117,3 +117,7 @@ Não foram integrados números de WhatsApp, APIs de IA, bancos comerciais ou Sup
 **Evidência (18/11/2026):** `npm test` = **179 testes em 14 arquivos, aprovados em PGlite e em PostgreSQL 16.15** (mesma bateria, `TEST_PG_ADMIN_URL`); `typecheck`, `lint`, `build` sem erros; `npm audit` sem vulnerabilidades; inicialização em modo produção a partir de instalação só com dependências de execução; navegação real no Chromium (login por senha, troca obrigatória, telas principais) sem erros de console.
 
 **Não verificado:** Meta WhatsApp, Anthropic, STT e SMTP reais; build da imagem Docker; carga/desempenho; PostgreSQL gerenciado (Supabase) com papel não superusuário; aplicativos móveis reais; T20 (indisponibilidade de hospedagem) além de reprocessamento local.
+
+## Automação ponta a ponta (1.1.0)
+
+**Evidência (19/11/2026):** `npm test` = **184 testes em 15 arquivos aprovados em PGlite**. `tests/automation.test.ts` percorre, só por mensagens do simulador: pedido do pedreiro → cotações → pedido preparado (sem aprovação automática) → aprovação do proprietário por código → confirmação do fornecedor → pagamento, custos e fluxo de caixa → foto da nota lida (IA de teste) e arquivada, sem duplicar no reenvio. Também: Pix antecipado e comando `PIX 0001`, cheque com/sem prazos, foto sem IA (pede digitação) e simulador restrito ao proprietário. A leitura real de foto e o WhatsApp real **não** foram exercitados contra serviços externos.
