@@ -68,6 +68,8 @@ export interface Material {
   unit: string;
   category: string;
   aliases: string[];
+  /** Palavras curtas que já valem este material (ex.: "cimento"); dispensam a especificação completa. */
+  quickNames?: string[];
 }
 export interface Contact {
   id: string;
@@ -547,6 +549,24 @@ export interface CashEntry {
   paidOn: string | null;
   worksiteId: string | null;
   createdAt: string;
+  /** Pagamento de mão de obra: quem recebeu e o comprovante arquivado. */
+  workerId?: string | null;
+  attachmentId?: string | null;
+  source?: "MANUAL" | "WHATSAPP_PROOF" | "WHATSAPP_TEXT";
+}
+export interface Worker {
+  id: string;
+  /** Como o proprietário chama a pessoa (ex.: "João Gesseiro"). */
+  name: string;
+  role: string | null;
+  /** Nome completo como aparece no comprovante bancário (ajuda a reconhecer o pagamento). */
+  legalName: string | null;
+  /** CPF/CNPJ somente dígitos (opcional). */
+  document: string | null;
+  phone: string | null;
+  worksiteId: string | null;
+  active: boolean;
+  createdAt: string;
 }
 export interface CashFlowSummary {
   today: string;
@@ -684,6 +704,7 @@ export interface State {
   receipts: Receipt[];
   bankAccounts: BankAccount[];
   cashEntries: CashEntry[];
+  workers: Worker[];
   cashFlow: CashFlowSummary | null;
   fiscalDocuments: FiscalDocument[];
   statementImports: BankStatementImport[];

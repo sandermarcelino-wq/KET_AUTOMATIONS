@@ -36,6 +36,7 @@ import {
   FileText,
   MessageSquare,
   Store,
+  Users,
   Upload,
   X,
   type LucideIcon,
@@ -68,6 +69,7 @@ import { Cash, Sales } from "./sales";
 import { Accounting, Reconciliation, WhatsAppPage } from "./ops";
 import { ForcePasswordChange, PasswordAuth } from "./auth";
 import { Chats } from "./chats";
+import { Team } from "./team";
 import { Costs, Finance, Receiving, SettingsPage } from "./finance";
 import "./styles.css";
 
@@ -85,6 +87,7 @@ type Page =
   | "accounting"
   | "whatsapp"
   | "chats"
+  | "team"
   | "settings"
   | "simulator"
   | "budget"
@@ -109,6 +112,7 @@ const names: Record<Page, string> = {
   accounting: "Contabilidade",
   whatsapp: "WhatsApp",
   chats: "Conversas",
+  team: "Equipe",
   settings: "Configurações",
   simulator: "Simulador",
   budget: "Orçamento-base",
@@ -410,6 +414,7 @@ function App() {
           { id: "cash" as Page, icon: Landmark },
           { id: "reconciliation" as Page, icon: Scale },
           { id: "accounting" as Page, icon: FileText },
+          { id: "team" as Page, icon: Users },
           { id: "whatsapp" as Page, icon: MessageSquare },
         ]),
     ...(session.role === "owner"
@@ -574,6 +579,7 @@ function App() {
                       "Notas fiscais, cobrança de documentos faltantes e pacote mensal para o contador.",
                     whatsapp:
                       "Central de mensagens: números, fila, falhas e modo de operação.",
+                    team: "Quem trabalha na obra e o que foi pago a cada um, lançado pelos comprovantes.",
                     chats:
                       "Converse como pedreiro, fornecedor ou proprietário e veja o sistema agir sozinho.",
                     settings:
@@ -697,6 +703,9 @@ function App() {
               )}
               {page === "accounting" && (
                 <Accounting {...{ state, session, worksiteId, mutate, busy }} />
+              )}
+              {page === "team" && (
+                <Team {...{ state, session, mutate, busy }} />
               )}
               {page === "chats" && (
                 <Chats {...{ state, session, mutate, busy }} />
@@ -2153,6 +2162,7 @@ function Registry(props: ContentProps) {
                   <th>Unidade comercial</th>
                   <th>Categoria</th>
                   <th>Também conhecido como</th>
+                  <th>Nome curto (padrão)</th>
                 </tr>
               ) : (
                 <tr>
@@ -2189,6 +2199,36 @@ function Registry(props: ContentProps) {
                     </td>
                     <td>{row.category}</td>
                     <td>{row.aliases.join(", ") || "—"}</td>
+                    <td>
+                      {row.quickNames?.join(", ") || "—"}
+                      {state.role === "owner" && (
+                        <button
+                          className="btn"
+                          style={{ marginLeft: 8 }}
+                          disabled={props.busy}
+                          onClick={() => {
+                            const v = window.prompt(
+                              "Palavra(s) curta(s) que já valem este material (ex.: cimento). Separe por vírgula. Deixe vazio para remover.",
+                              row.quickNames?.join(", ") ?? "",
+                            );
+                            if (v === null) return;
+                            void props.mutate(
+                              `/materials/${row.id}`,
+                              {
+                                quickNames: v
+                                  .split(",")
+                                  .map((x) => x.trim())
+                                  .filter(Boolean),
+                              },
+                              "Nome curto salvo.",
+                              "PATCH",
+                            );
+                          }}
+                        >
+                          Editar
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ) : "address" in row ? (
                   <tr key={row.id}>
@@ -2250,6 +2290,10 @@ function RegistryForm({
               unit: get("unit"),
               category: get("category"),
               aliases: get("aliases")
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+              quickNames: get("quickNames")
                 .split(",")
                 .map((s) => s.trim())
                 .filter(Boolean),
@@ -2333,6 +2377,9 @@ function RegistryForm({
               placeholder="cimento 50 kg, cimento CP II"
               maxLength={500}
             />
+          </Field>
+          <Field label="Nome curto que já vale este material (opcional)" wide>
+            <input name="quickNames" placeholder="cimento" maxLength={200} />
           </Field>
           <div className="notice full-width">
             Use unidades precisas: um saco de 50 kg é diferente de um saco de 25

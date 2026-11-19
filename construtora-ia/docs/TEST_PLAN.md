@@ -121,3 +121,7 @@ Não foram integrados números de WhatsApp, APIs de IA, bancos comerciais ou Sup
 ## Automação ponta a ponta (1.1.0)
 
 **Evidência (19/11/2026):** `npm test` = **184 testes em 15 arquivos aprovados em PGlite**. `tests/automation.test.ts` percorre, só por mensagens do simulador: pedido do pedreiro → cotações → pedido preparado (sem aprovação automática) → aprovação do proprietário por código → confirmação do fornecedor → pagamento, custos e fluxo de caixa → foto da nota lida (IA de teste) e arquivada, sem duplicar no reenvio. Também: Pix antecipado e comando `PIX 0001`, cheque com/sem prazos, foto sem IA (pede digitação) e simulador restrito ao proprietário. A leitura real de foto e o WhatsApp real **não** foram exercitados contra serviços externos.
+
+## Material padrão e mão de obra (1.2.0)
+
+**Evidência (19/11/2026):** `npm test` = **197 testes em 16 arquivos aprovados em PGlite**; `typecheck`, `lint` e `build` sem erros; navegação real no Chromium (cadastro em Equipe, `PAGUEI` em Conversas, totais na tela) sem erros de console. `tests/labor.test.ts`: nome curto do material (sem troca por engano, ambiguidade), reconhecimento de trabalhador (nome completo, CPF, nunca só o primeiro nome), comprovante por foto (arquivado, caixa baixado, reenvio sem duplicar, vários comprovantes), nome desconhecido, `PAGUEI` em várias linhas (tudo ou nada), permissões. A leitura real do comprovante exige IA configurada e não foi exercitada contra serviço externo.

@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { parseLaborPayments } from "./labor.js";
 import { addDays } from "./purchasing.js";
 
 /** Verifica X-Hub-Signature-256 (HMAC-SHA256 do corpo bruto com o segredo do app Meta). */
@@ -101,6 +102,7 @@ export type OwnerCommand =
   | { kind: "REJECT"; number: number | null }
   | { kind: "PIX"; number: number | null }
   | { kind: "PAID"; amount: string }
+  | { kind: "LABOR_PAID"; lines: { name: string; amount: string }[] }
   | { kind: "QUERY"; intent: QueryIntent }
   | { kind: "UNKNOWN" };
 export type QueryIntent =
@@ -139,6 +141,8 @@ export function parseOwnerCommand(raw: string): OwnerCommand {
       : m[1];
     return { kind: "PAID", amount: Number(v).toFixed(2) };
   }
+  const labor = parseLaborPayments(raw);
+  if (labor) return { kind: "LABOR_PAID", lines: labor };
   if (
     /receber.*(comprador|clientes?|mes)|(comprador|clientes?).*receber/.test(t)
   )

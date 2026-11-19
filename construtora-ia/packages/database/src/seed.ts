@@ -93,6 +93,7 @@ export async function seedDatabase(db: PGlite): Promise<void> {
           unit,
           category,
           aliases: [name.toLocaleLowerCase("pt-BR")],
+          quickNames: name.startsWith("Cimento") ? ["cimento"] : [],
         }),
       );
       for (const material of materials) {

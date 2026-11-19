@@ -1,5 +1,12 @@
 # Histórico de alterações
 
+## 1.2.0 — Material padrão e equipe de mão de obra — 2026-11-19
+
+- **Nome curto do material:** o proprietário cadastra, por material, palavras que já valem o item (ex.: “cimento” = Cimento CP II 50 kg). O pedreiro não precisa digitar o nome completo. Se pedir outra medida ou outro tipo (CP III, 25 kg), o sistema pergunta em vez de trocar; se duas opções usam o mesmo nome curto, pergunta qual.
+- **Equipe (nova tela e tabela `workers`, migração 008):** cadastro de quem entra na obra (nome como você chama, função, obra, nome completo do comprovante, CPF opcional).
+- **Comprovante no WhatsApp:** o proprietário envia a foto do comprovante; a IA lê valor, data e quem recebeu; se a pessoa é reconhecida (CPF ou nome completo, nunca por palpite) o pagamento é lançado em mão de obra, o comprovante fica arquivado e o fluxo de caixa realizado é atualizado. A mesma foto não é lançada duas vezes. Sem reconhecimento, o sistema explica e aceita `PAGUEI <nome> <valor>` (uma ou várias linhas); a última foto enviada vira o comprovante.
+- Tela Equipe mostra pago na semana, no mês e total por pessoa. 197 testes passam (13 novos, `tests/labor.test.ts`).
+
 ## 1.1.0 — Automação ponta a ponta — 2026-11-19
 
 - Fluxo todo por conversa: pedido do pedreiro → cotação enviada sozinha aos fornecedores → respostas lidas → comparativo → pedido **preparado** para o proprietário aprovar → confirmação do fornecedor → cronograma de pagamento criado sozinho (Pix antecipado, à vista, boleto/cheque com os prazos informados) → foto da nota lida pela IA, arquivada e lançada em custos da obra e fluxo de caixa.

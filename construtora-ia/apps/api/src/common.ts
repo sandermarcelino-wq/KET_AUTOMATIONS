@@ -66,6 +66,7 @@ export const tableNames = new Set([
   "receipts",
   "bank_accounts",
   "cash_entries",
+  "workers",
   "whatsapp_accounts",
   "fiscal_documents",
   "bank_statement_imports",

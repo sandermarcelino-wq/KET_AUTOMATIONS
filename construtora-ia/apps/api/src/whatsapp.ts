@@ -8,6 +8,7 @@ import {
   backoffMinutes,
   isExplicitSupplierConfirmation,
   isUnavailableText,
+  matchWorker,
   parseDeliveryText,
   parseMetaWebhook,
   parseOwnerCommand,
@@ -27,6 +28,7 @@ import type {
   Role,
   Supplier,
   WhatsAppStatus,
+  Worker,
   Worksite,
 } from "../../../packages/shared/src/index.js";
 import {
@@ -439,6 +441,68 @@ async function handleOwner(ctx: Ctx, owner: Contact): Promise<string | null> {
     return r.status === 200
       ? null
       : `Não foi possível enviar os dados do Pix: ${String(r.body.error)}`;
+  }
+  if (cmd.kind === "LABOR_PAID") {
+    const workers = await inTenant(deps, tenantId, (tx) =>
+      list<Worker>(tx, "workers", tenantId),
+    );
+    const resolved = cmd.lines.map((l) => ({
+      l,
+      m: matchWorker(workers, { name: l.name }, true),
+    }));
+    const bad = resolved.filter((r) => !r.m.worker);
+    if (bad.length)
+      return `Não lancei nada. ${bad
+        .map((b) =>
+          b.m.candidates.length
+            ? `"${b.l.name}" serve para mais de uma pessoa (${b.m.candidates.map((w) => w.name).join(", ")})`
+            : `Não encontrei "${b.l.name}" na Equipe`,
+        )
+        .join("; ")}. Cadastre em Equipe ou use o nome completo.`;
+    // com uma única pessoa, a última foto enviada (30 min) vira o comprovante arquivado
+    let attachmentId: string | null = null;
+    if (cmd.lines.length === 1)
+      attachmentId = await inTenant(
+        deps,
+        tenantId,
+        async (tx) =>
+          (
+            await tx.query<{ data: Message }>(
+              "SELECT data FROM messages WHERE tenant_id=$1 AND data->>'direction'='inbound' AND data->>'recipient'=$2 AND data->>'attachmentId' IS NOT NULL AND data->>'createdAt' > $3 ORDER BY data->>'createdAt' DESC LIMIT 1",
+              [
+                tenantId,
+                ev.from,
+                new Date(
+                  deps.integrations.now().getTime() - 30 * 60000,
+                ).toISOString(),
+              ],
+            )
+          ).rows[0]?.data.attachmentId ?? null,
+      );
+    const done: string[] = [];
+    let total = new Decimal(0);
+    for (const { l, m } of resolved) {
+      const r = await deps.internal(
+        tenantId,
+        actorFor(owner),
+        "POST",
+        "/api/labor-payments",
+        {
+          workerId: m.worker!.id,
+          amount: l.amount,
+          attachmentId,
+          source: attachmentId ? "WHATSAPP_PROOF" : "WHATSAPP_TEXT",
+        },
+      );
+      if (r.status === 201 || r.status === 200) {
+        if (r.status === 201) total = total.plus(l.amount);
+        done.push(
+          `${m.worker!.name} ${brl(l.amount)}${r.status === 200 ? " (já estava lançado)" : ""}`,
+        );
+      } else
+        done.push(`${m.worker!.name}: não lançado (${String(r.body.error)})`);
+    }
+    return `Lançado em mão de obra: ${done.join("; ")}. Total novo: ${brl(total.toFixed(2))}. Fluxo de caixa atualizado.`;
   }
   if (cmd.kind === "PAID") {
     const target = await inTenant(deps, tenantId, async (tx) =>
@@ -945,14 +1009,81 @@ export async function processInbound(
           bytes: media.bytes,
           mime: media.mime,
         });
-        if (ex?.legible && ex.amount)
+        if (ex?.legible && ex.amount) {
+          // 1) comprovante de mão de obra: reconhece quem recebeu (documento ou nome) e lança sozinho
+          const workers = await inTenant(deps, tenantId, (tx) =>
+            list<Worker>(tx, "workers", tenantId),
+          );
+          const found = matchWorker(
+            workers,
+            { name: ex.payeeName, document: ex.payeeDocument },
+            false,
+          );
+          if (found.worker) {
+            const today = deps.integrations.now().toISOString().slice(0, 10);
+            const r = await deps.internal(
+              tenantId,
+              actorFor(contact),
+              "POST",
+              "/api/labor-payments",
+              {
+                workerId: found.worker.id,
+                amount: ex.amount,
+                ...(ex.paidAt && ex.paidAt <= today
+                  ? { paidOn: ex.paidAt }
+                  : {}),
+                attachmentId,
+                source: "WHATSAPP_PROOF",
+              },
+            );
+            await reply(
+              deps,
+              tenantId,
+              ev.from,
+              r.status === 201
+                ? `Lancei ${brl(ex.amount)} pagos a ${found.worker.name}${found.worker.role ? ` (${found.worker.role})` : ""}. Comprovante arquivado e fluxo de caixa atualizado.`
+                : r.status === 200
+                  ? `Esse comprovante já estava lançado (${found.worker.name}). Nada foi duplicado.`
+                  : `Não consegui lançar: ${String(r.body.error)}`,
+            );
+            return "DONE";
+          }
+          if (found.candidates.length > 1) {
+            await reply(
+              deps,
+              tenantId,
+              ev.from,
+              `Recebi o comprovante de ${brl(ex.amount)}, mas o nome serve para mais de uma pessoa (${found.candidates.map((w) => w.name).join(", ")}). Responda com o nome certo, por exemplo: PAGUEI ${found.candidates[0].name} ${ex.amount.replace(".", ",")}`,
+            );
+            return "DONE";
+          }
+          // 2) Pix de fornecedor aguardando comprovante
+          const pixWaiting = await inTenant(deps, tenantId, async (tx) =>
+            (
+              await list<PaymentObligation>(tx, "payment_obligations", tenantId)
+            ).some(
+              (o) =>
+                o.kind === "PIX" &&
+                o.pixRequestedAt &&
+                ["SCHEDULED", "DUE", "OVERDUE"].includes(o.status),
+            ),
+          );
+          if (!pixWaiting) {
+            await reply(
+              deps,
+              tenantId,
+              ev.from,
+              `Recebi o comprovante de ${brl(ex.amount)}${ex.payeeName ? ` para ${ex.payeeName}` : ""}, mas não reconheci quem recebeu. Se é mão de obra, responda: PAGUEI <nome na Equipe> ${ex.amount.replace(".", ",")} (o comprovante fica arquivado). Para reconhecer sozinho da próxima vez, preencha o nome completo da pessoa em Equipe.`,
+            );
+            return "DONE";
+          }
           text = `PAGO ${ex.amount.replace(".", ",")}`;
-        else {
+        } else {
           await reply(
             deps,
             tenantId,
             ev.from,
-            "Recebi o comprovante. Informe o valor pago, por exemplo: PAGO 3200,00.",
+            "Recebi o comprovante, mas não consegui ler. Para mão de obra envie: PAGUEI João Gesseiro 1200 (ou várias linhas, uma pessoa por linha). Para Pix de fornecedor: PAGO 3200,00.",
           );
           return "DONE";
         }

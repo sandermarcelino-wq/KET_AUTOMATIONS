@@ -156,6 +156,35 @@ export function extractRequest(
     const matched = names
       .filter((name) => name.length >= 3 && matchIndex(input, name) >= 0)
       .sort((a, b) => b.length - a.length)[0];
+    // Nome curto cadastrado pelo proprietário (ex.: "cimento"): vale o material padrão sem especificação.
+    const quick = (material.quickNames ?? [])
+      .map(specText)
+      .filter((name) => name.length >= 3 && matchIndex(input, name) >= 0)
+      .sort((a, b) => b.length - a.length)[0];
+    if (!matched && quick) {
+      // O nome curto só vale se o pedido não pedir outra especificação (outra medida ou outro tipo de cimento).
+      const asked = [
+        ...input.matchAll(
+          /\b\d+(?:[.,]\d+)?\s*(?:mm²|m²|m³|kg|mm|cm|m|l)(?=$|[^\p{L}\p{N}])|\bcp\s*(?:iv|v|i{1,3})\b/gu,
+        ),
+      ].map((x) => x[0].replace(/\s+/g, ""));
+      const own = specText(material.name).replace(/\s+/g, "");
+      const ownCement = /cp(?:iv|v|i{1,3})/.exec(own)?.[0];
+      if (
+        asked.some((spec) =>
+          spec.startsWith("cp") ? spec !== ownCement : !own.includes(spec),
+        )
+      )
+        return [];
+      return [
+        {
+          material,
+          index: matchIndex(input, quick),
+          length: quick.length,
+          quick: true,
+        },
+      ];
+    }
     if (!matched) return [];
     // Uma especificação numérica não pode desaparecer por um alias genérico.
     const specs = [
@@ -165,16 +194,26 @@ export function extractRequest(
     ].map((x) => x[0]);
     if (specs.some((spec) => matchIndex(input, spec) < 0)) return [];
     return [
-      { material, index: matchIndex(input, matched), length: matched.length },
+      {
+        material,
+        index: matchIndex(input, matched),
+        length: matched.length,
+        quick: false,
+      },
     ];
   });
-  if (candidates.length !== 1) {
-    result.clarification = candidates.length
-      ? "Envie um material por solicitação, com a especificação completa."
+  // Se o pedido já é específico (nome completo), o nome curto de outro material não concorre.
+  const specific = candidates.filter((x) => !x.quick);
+  const pool = specific.length ? specific : candidates;
+  if (pool.length !== 1) {
+    result.clarification = pool.length
+      ? pool.every((x) => x.quick)
+        ? `Mais de um material responde por esse nome (${pool.map((x) => x.material.name).join("; ")}). Qual deles?`
+        : "Envie um material por solicitação, com a especificação completa."
       : "Qual é o material e a embalagem ou medida exata? Ex.: cimento CP II 50 kg.";
     return result;
   }
-  const { material, index, length } = candidates[0];
+  const { material, index, length } = pool[0];
   const suffix = input.slice(index + length);
   if (
     /\d+(?:[.,]\d+)?\s*(?:sacos?|tubos?|barras?|unidades?|un\b|kg\b|m³|m3|m²|caixas?|latas?|blocos?|litros?|metros?)/.test(
@@ -382,3 +421,4 @@ export * from "./sales.js";
 export * from "./banking.js";
 export * from "./fiscal.js";
 export * from "./messaging.js";
+export * from "./labor.js";

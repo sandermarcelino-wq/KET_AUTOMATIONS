@@ -29,6 +29,7 @@ import type {
 } from "../../../packages/shared/src/index.js";
 import { purchasingState, registerPurchasing } from "./purchasing.js";
 import { financeState, registerFinance } from "./finance.js";
+import { laborState, registerLabor } from "./labor.js";
 import { registerSales, salesState } from "./sales.js";
 import { bankingState, registerBanking } from "./banking.js";
 import { fiscalState, registerFiscal } from "./fiscal.js";
@@ -393,6 +394,7 @@ export async function createApp(
       const purchasing = await purchasingState(tx, s);
       const finance = await financeState(tx, s);
       const sales = await salesState(tx, s);
+      const labor = await laborState(tx, s);
       const banking = await bankingState(tx, s);
       const fiscal = await fiscalState(tx, s);
       const whatsappInfo = await whatsappState(tx, s, integ);
@@ -401,6 +403,7 @@ export async function createApp(
         ...purchasing,
         ...finance,
         ...sales,
+        ...labor,
         ...banking,
         ...fiscal,
         whatsapp: whatsappInfo,
@@ -556,7 +559,11 @@ export async function createApp(
     const s = c.get("session");
     assertOwner(s);
     const body = z
-      .object({ category: text, aliases: z.array(text).max(30) })
+      .object({
+        category: text,
+        aliases: z.array(text).max(30),
+        quickNames: z.array(text).max(10),
+      })
       .partial()
       .strict()
       .parse(await c.req.json());
@@ -613,10 +620,15 @@ export async function createApp(
         unit: text,
         category: text,
         aliases: z.array(text).max(30),
+        quickNames: z.array(text).max(10).optional(),
       })
       .strict()
       .parse(await c.req.json());
-    const material: Material = { id: randomUUID(), ...body };
+    const material: Material = {
+      id: randomUUID(),
+      ...body,
+      quickNames: body.quickNames ?? [],
+    };
     return c.json(
       await scoped(s, async (tx) => {
         if (
@@ -1067,6 +1079,7 @@ export async function createApp(
   registerPurchasing(app, { scoped });
   registerFinance(app, { scoped, integrations: integ });
   registerSales(app, { scoped });
+  registerLabor(app, { scoped });
   registerBanking(app, { scoped });
   registerFiscal(app, { scoped, db, integrations: integ });
   registerWhatsApp(app, waDeps);

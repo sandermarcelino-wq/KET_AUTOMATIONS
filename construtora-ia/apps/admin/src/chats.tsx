@@ -31,6 +31,7 @@ const EXAMPLES: Record<Person["kind"], string[]> = {
   owner: [
     "APROVAR 0001",
     "PIX 0001",
+    "PAGUEI João Gesseiro 1200",
     "Quanto temos para receber dos compradores este mês?",
     "Quanto dinheiro teremos disponível daqui a 90 dias?",
   ],

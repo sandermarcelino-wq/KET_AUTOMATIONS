@@ -2,7 +2,7 @@
 
 Sistema de gestão de obras: compras e cotações com aprovação exclusiva do proprietário, teto de preço evolutivo, recebimento documental, Pix e cheques, vendas de apartamentos com recebíveis, fluxo de caixa, conciliação de extratos, notas fiscais e fechamento contábil — operado por painel web e por WhatsApp. Multiempresa (SaaS), em português.
 
-**Estado honesto:** todo o código, os testes e as regras de negócio estão implementados e verificados (184 testes, em PGlite **e** PostgreSQL 16). **Nenhum serviço externo real foi exercitado** — WhatsApp Cloud API, IA, transcrição e SMTP têm adaptadores completos testados contra respostas simuladas e começam **desligados**. O sistema nunca paga, transfere dinheiro ou compra sozinho: toda compra exige aprovação do proprietário e toda baixa financeira é confirmada por ele.
+**Estado honesto:** todo o código, os testes e as regras de negócio estão implementados e verificados (197 testes, em PGlite **e** PostgreSQL 16). **Nenhum serviço externo real foi exercitado** — WhatsApp Cloud API, IA, transcrição e SMTP têm adaptadores completos testados contra respostas simuladas e começam **desligados**. O sistema nunca paga, transfere dinheiro ou compra sozinho: toda compra exige aprovação do proprietário e toda baixa financeira é confirmada por ele.
 
 ## Executar (desenvolvimento, dados fictícios)
 ```sh
@@ -12,7 +12,7 @@ npm run dev        # painel http://127.0.0.1:5173 · API http://127.0.0.1:3001
 Na tela inicial escolha a empresa de demonstração e o perfil **Proprietário**. O login de desenvolvimento só existe fora de produção. `npm run demo` percorre o fluxo de compras no terminal.
 
 ```sh
-npm test           # 184 testes (PGlite em memória)
+npm test           # 197 testes (PGlite em memória)
 TEST_PG_ADMIN_URL=postgres://postgres@127.0.0.1:5432/postgres npm test   # mesma bateria em PostgreSQL
 npm run typecheck && npm run lint && npm run build
 ```

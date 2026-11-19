@@ -144,6 +144,7 @@ export const proofExtraction = z
       .nullable(),
     transactionId: z.string().max(80).nullable(),
     payeeDocument: z.string().max(18).nullable(),
+    payeeName: z.string().max(120).nullable().optional(),
   })
   .strict();
 export const requestExtraction = z
@@ -238,7 +239,12 @@ export class ClaudeAI implements AIProvider {
     materials: Material[],
     now = new Date(),
   ): Promise<Extraction> {
-    const catalog = materials.map((m) => `${m.name} [${m.unit}]`).join("\n");
+    const catalog = materials
+      .map(
+        (m) =>
+          `${m.name} [${m.unit}]${m.quickNames?.length ? ` (padrão quando disserem só: ${m.quickNames.join(", ")})` : ""}`,
+      )
+      .join("\n");
     const out = await this.ask([
       {
         type: "text",
@@ -289,7 +295,7 @@ export class ClaudeAI implements AIProvider {
       this.image(i),
       {
         type: "text",
-        text: "Comprovante de pagamento/Pix. Campos: legible, amount (decimal com ponto), paidAt (AAAA-MM-DD), transactionId, payeeDocument (somente dígitos).",
+        text: "Comprovante de pagamento/Pix. Campos: legible, amount (decimal com ponto), paidAt (AAAA-MM-DD), transactionId, payeeName (nome de quem RECEBEU, como aparece), payeeDocument (somente dígitos, se visível por inteiro).",
       },
     ]);
     const p = proofExtraction.safeParse(out);
